@@ -13,14 +13,16 @@ Uloge:<br />
   istom mestu odakle je započeo nivo.</li></li></ul>
 
 <li>Neprijatelji:
-o Kreći se nasumično gore-dole-levo-desno, kroz tunele.
-  o Na početku nivoa, nalaze se u središnjem delu u svojoj jazbini.</li>
+  <ul>
+    <li>Kreći se nasumično gore-dole-levo-desno, kroz tunele.</li>
+ <il>Na početku nivoa, nalaze se u središnjem delu u svojoj jazbini.</li></li></ul>
 <li>Bonus:
-o Na nasumično izabranom mestu iskače bonus. Kada se pokupi bonus,
+  <ul>
+<li>Na nasumično izabranom mestu iskače bonus. Kada se pokupi bonus,
 neprijatelji se usporavaju, menjaju boju i postoji mogućnost da ih igrač
-pojede i dobije 200 poena.
-o Nakon nasumičnog vremena, neprijatelji se vraćaju u prvobitno stanje i
-  opet mogu da ubiju igrača.</li>
+  pojede i dobije 200 poena.</li>
+<li>Nakon nasumičnog vremena, neprijatelji se vraćaju u prvobitno stanje i
+  opet mogu da ubiju igrača.</li></li></ul>
 Pravila:
 <li>Igra se beskonačno nivoa (prihvatljivo je napraviti jedan nivo koji se igra
   beskonačno mnogo puta).</li>
