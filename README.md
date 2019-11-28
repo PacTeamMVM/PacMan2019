@@ -10,7 +10,7 @@ Uloge:<br />
 <li>Na početku nivoa igrači se nalaze u ćoškovima lavirinta. Kružić nosi 10
   poena.</li>
 <li>Svaki igrač ima 3 života po nivou. Kada izgubi život igrač se pojavi na
-    istom mestu odakle je započeo nivo.</li></li>
+  istom mestu odakle je započeo nivo.</li>
 <li>Neprijatelji:
 o Kreći se nasumično gore-dole-levo-desno, kroz tunele.
   o Na početku nivoa, nalaze se u središnjem delu u svojoj jazbini.</li>
