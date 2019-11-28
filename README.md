@@ -4,12 +4,13 @@ kroz koje avatari mogu da se kreću.<br />
 Uloge:<br />
 <ul>
   <li>Dva ili više igrača, pokreću svog avatara pomoću strelica, odnosno ASDW tastera:
-o Kreću se gore-dole-levo-desno, kroz lavirint.
-o Svaki igrač skuplja poene prelazeći preko kružića, koji potom nestaje.
-o Na početku nivoa igrači se nalaze u ćoškovima lavirinta. Kružić nosi 10
-poena.
-o Svaki igrač ima 3 života po nivou. Kada izgubi život igrač se pojavi na
-    istom mestu odakle je započeo nivo.</li>
+    <ul>
+      <li>Kreću se gore-dole-levo-desno, kroz lavirint.</li>
+      <li>Svaki igrač skuplja poene prelazeći preko kružića, koji potom nestaje.</li>
+<li>Na početku nivoa igrači se nalaze u ćoškovima lavirinta. Kružić nosi 10
+  poena.</li>
+<li>Svaki igrač ima 3 života po nivou. Kada izgubi život igrač se pojavi na
+    istom mestu odakle je započeo nivo.</li></li>
 <li>Neprijatelji:
 o Kreći se nasumično gore-dole-levo-desno, kroz tunele.
   o Na početku nivoa, nalaze se u središnjem delu u svojoj jazbini.</li>
