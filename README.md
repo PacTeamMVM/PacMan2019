@@ -23,7 +23,7 @@ neprijatelji se usporavaju, menjaju boju i postoji mogućnost da ih igrač
   pojede i dobije 200 poena.</li>
 <li>Nakon nasumičnog vremena, neprijatelji se vraćaju u prvobitno stanje i
   opet mogu da ubiju igrača.</li></li></ul>
-Pravila:
+<br />Pravila:
 <li>Igra se beskonačno nivoa (prihvatljivo je napraviti jedan nivo koji se igra
   beskonačno mnogo puta).</li>
   <li>Ukoliko neprijatelj dodirne igrača, on gubi život.</li>
