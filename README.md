@@ -1,10 +1,8 @@
 # PacMan2019
-Pac Man 2019
 Napisati igricu nalik Pac-Man igrici. Napraviti šemu lavirinta, sličnu kao u originalnoj igrici,
-kroz koje avatari mogu da se kreću.
-Uloge:
-• Dva ili više igrača, pokreću svog avatara pomoću strelica, odnosno ASDW
-tastera:
+kroz koje avatari mogu da se kreću.<br />
+Uloge:<br />
+  • Dva ili više igrača, pokreću svog avatara pomoću strelica, odnosno ASDW tastera:
 o Kreću se gore-dole-levo-desno, kroz lavirint.
 o Svaki igrač skuplja poene prelazeći preko kružića, koji potom nestaje.
 o Na početku nivoa igrači se nalaze u ćoškovima lavirinta. Kružić nosi 10
@@ -32,5 +30,5 @@ izlaza iz lavirinta.
 • Igrica se završava kada svi igrači izgube sve živote.
 Za realizaciju koristiti Python3, PyQt5, multiprocessing. Raditi u timovima od 4
 člana.Napisati dokumentaciju u kojoj opisuje opšti rad aplikacije i rezimirati prednosti i
-mane korišćenja Python jezika, PyQt5 okvira i paralelizacije rada.
+mane korišćenja Python jezika, PyQt5 okvira i paralelizacije rada.<br />
 Demo originalne igrice: https://www.youtube.com/watch?v=HQv0zAXDCo8
