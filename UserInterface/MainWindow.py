@@ -196,7 +196,7 @@ def options_update(self, grid):
     grid.addWidget(btn_back)
 
     # grid.addWidget(btn_back, 2, 0, 1, 1)
-
+    #proba
 
 def clickBox(self, state):
     if state == Qt.Checked:
