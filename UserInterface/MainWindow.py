@@ -15,7 +15,7 @@ class MainWindow(QWidget, QGridLayout):
         super().__init__()
         sound.play()
         initUI(self, grid)
-
+# komentar
 
 def initUI(self, grid):
     self.setGeometry(200, 200, 700, 700)
