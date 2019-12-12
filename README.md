@@ -38,4 +38,10 @@ neprijatelji se usporavaju, menjaju boju i postoji mogućnost da ih igrač
 Za realizaciju koristiti Python3, PyQt5, multiprocessing. Raditi u timovima od 4
 člana.Napisati dokumentaciju u kojoj opisuje opšti rad aplikacije i rezimirati prednosti i
 mane korišćenja Python jezika, PyQt5 okvira i paralelizacije rada.<br /> <br />
-Demo originalne igrice: https://www.youtube.com/watch?v=HQv0zAXDCo8
+Demo originalne igrice: https://www.youtube.com/watch?v=HQv0zAXDCo8 <br />
+Članovi tima:
+<ol>
+  <li>Marko Maleš males97@live.com</li>
+  <li>Mile Kajtez milekajtez@gmail.com</li>
+  <li>Vanja Ivakić vanja.ivakic@gmail.com</li>
+</ol>
