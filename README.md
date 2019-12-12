@@ -41,7 +41,7 @@ mane korišćenja Python jezika, PyQt5 okvira i paralelizacije rada.<br /> <br /
 Demo originalne igrice: https://www.youtube.com/watch?v=HQv0zAXDCo8 <br /> <br />
 Članovi tima:
 <ol>
-  <li>Marko Maleš males97@live.com</li>
-  <li>Mile Kajtez milekajtez@gmail.com</li>
-  <li>Vanja Ivakić vanja.ivakic@gmail.com</li>
+  <li>Marko Maleš - males97@live.com</li>
+  <li>Mile Kajtez - milekajtez@gmail.com</li>
+  <li>Vanja Ivakić - vanja.ivakic@gmail.com</li>
 </ol>
