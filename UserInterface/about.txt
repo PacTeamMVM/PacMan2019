@@ -12,9 +12,7 @@ causes the ghosts to turn blue, allowing Pac-Man to eat them for bonus
 points. It is the first game to run on the Namco Pac-Man arcade board.
 
 
-RULES
-
-...
+RULES : NO RULES
 
 
 AUTORS
@@ -23,10 +21,3 @@ Marko Males
 Vanja Ivakic
 Mile Kajtez
 
-asd
-s
-s
-s
-s
-s
-s
