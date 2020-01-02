@@ -7,7 +7,6 @@ from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit
 
-from Map.MazeFile import mazeMethod
 from Map.key_notifier import KeyNotifier
 
 
