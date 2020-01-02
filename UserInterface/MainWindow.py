@@ -3,9 +3,12 @@ import sys
 import winsound
 
 from PyQt5.QtCore import QByteArray, Qt
-from PyQt5.QtGui import QIcon, QMovie
+from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit
+
+from Map.MazeFile import mazeMethod
+from Map.key_notifier import KeyNotifier
 
 
 def cleanGrid(layout):
@@ -32,6 +35,14 @@ class MainWindow(QWidget):
         super().__init__()
         layout = QGridLayout()
         self.initWindow(layout)
+
+        #dodao
+        self.pix1 = QPixmap('skull_red.png')
+        self.pix2 = QPixmap('skull_green.png')
+        self.label1 = QLabel(self)
+        self.label2 = QLabel(self)
+        self.key_notifier = KeyNotifier()
+
         self.show()
 
     def initWindow(self, layout):
@@ -40,7 +51,7 @@ class MainWindow(QWidget):
         absolutePath = os.path.dirname(__file__)
         picturePath = os.path.join(absolutePath[0:len(absolutePath) - 13:1], 'Pictures/icon.jpg')
         self.setWindowIcon(QIcon(picturePath))
-        self.setStyleSheet("background-color:black")
+        self.setStyleSheet("background-color:white")
 
         cleanGrid(layout)
         self.animation(layout)
@@ -74,7 +85,7 @@ class MainWindow(QWidget):
         self.setLayout(layout)
 
     def animation(self, layout):
-        movie_screen = QLabel("Mile Kajtez")
+        movie_screen = QLabel()
         movie_screen.setAlignment(Qt.AlignCenter)
         absolutePath = os.path.dirname(__file__)
         picturePath = absolutePath[0:len(absolutePath) - 14:1] + '/Pictures/pacmanGif.gif'
@@ -176,9 +187,83 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 9, 2)
-        buttonBack.clicked.connect(lambda: self.initWindow(layout))
+        buttonBack.clicked.connect(lambda: self.maze(layout))
 
         self.setLayout(layout)
+
+    def maze(self, layout):
+        cleanGrid(layout)
+        self.setWindowState(Qt.WindowMaximized)
+
+        '''labelPlayer1 = QLabel()
+        labelPlayer1.setText("Player1:")
+        labelPlayer2 = QLabel()
+        labelPlayer2.setText("Player2:")
+        labelPlayer3 = QLabel()
+        labelPlayer3.setText("Player3:")
+        labelPlayer4 = QLabel()
+        labelPlayer4.setText("Player4:")
+
+        mapLayout = QGridLayout()
+        
+        layout.addItem(mapLayout)'''
+
+        #layout.addChildLayout(mapLayout)
+        #layout
+        #layout.addChildWidget(labelPlayer1,0,0)
+        #layout.addWidget(labelPlayer1, 0, ,0, 10, 10)
+        #layout.addChildWidget(labelPlayer2, 1,1)
+        #layout.addChildWidget(labelPlayer3,2,2)
+        #layout.addChildWidget(labelPlayer4,3,3)
+
+        self.__init_ui__(layout)
+
+        self.key_notifier.key_signal.connect(self.__update_position__)
+        self.key_notifier.start()
+
+    def __init_ui__(self, layout):
+
+        self.label1.setPixmap(self.pix1)
+        self.label1.setGeometry(100, 40, 50, 50)
+
+        self.label2.setPixmap(self.pix2)
+        self.label2.setGeometry(50, 40, 50, 50)
+
+        #layout.addWidget(self.label1)
+        #alayout.addWidget(self.label2)
+
+        #self.show()
+
+    def keyPressEvent(self, event):
+        self.key_notifier.add_key(event.key())
+
+    def keyReleaseEvent(self, event):
+        self.key_notifier.rem_key(event.key())
+
+    def __update_position__(self, key):
+        rec1 = self.label1.geometry()
+        rec2 = self.label2.geometry()
+
+        if key == Qt.Key_Right:
+            self.label1.setGeometry(rec1.x() + 5, rec1.y(), rec1.width(), rec1.height())
+        elif key == Qt.Key_Down:
+            self.label1.setGeometry(rec1.x(), rec1.y() + 5, rec1.width(), rec1.height())
+        elif key == Qt.Key_Up:
+            self.label1.setGeometry(rec1.x(), rec1.y() - 5, rec1.width(), rec1.height())
+        elif key == Qt.Key_Left:
+            self.label1.setGeometry(rec1.x() - 5, rec1.y(), rec1.width(), rec1.height())
+
+        if key == Qt.Key_D:
+            self.label2.setGeometry(rec2.x() + 5, rec2.y(), rec2.width(), rec2.height())
+        elif key == Qt.Key_S:
+            self.label2.setGeometry(rec2.x(), rec2.y() + 5, rec2.width(), rec2.height())
+        elif key == Qt.Key_W:
+            self.label2.setGeometry(rec2.x(), rec2.y() - 5, rec2.width(), rec2.height())
+        elif key == Qt.Key_A:
+            self.label2.setGeometry(rec2.x() - 5, rec2.y(), rec2.width(), rec2.height())
+
+    def closeEvent(self, event):
+        self.key_notifier.die()
 
 
 if __name__ == '__main__':
