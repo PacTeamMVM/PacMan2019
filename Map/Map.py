@@ -15,6 +15,11 @@ class Map:
         #  0 - empty fields
         #  1 - points
         #  2 - big point
+        #  3 - player 1
+        #  4 - player 2
+        #  5 - player 3
+        #  6 - player 4
+        #  7 - enemy
 
         half_map_matrix = [[-3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3],
                            [-3,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -3],

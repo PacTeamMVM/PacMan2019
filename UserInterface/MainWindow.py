@@ -5,11 +5,12 @@ import winsound
 from PyQt5.QtCore import QByteArray, Qt, QSize
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
-    QScrollArea, QComboBox, QLineEdit, QFrame
+    QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene
 from PyQt5.uic.Compiler.qtproxies import QtGui, QtCore
 
 from Map.key_notifier import KeyNotifier
 from Map.Map import Map
+
 
 def cleanGrid(layout):
     while layout.count() > 0:
@@ -34,15 +35,15 @@ class MainWindow(QWidget):
         layout = QGridLayout()
         self.initWindow(layout)
 
-        #dodao
-        self.pix1 = QPixmap('skull2.png')
-        self.pix2 = QPixmap('skull1.png')
+        # dodao
+        self.pix1 = QPixmap('skull_enemy.png')
+        self.pix2 = QPixmap('skull_friendly.png')
         self.label1 = QLabel(self)
         self.label2 = QLabel(self)
-        self.key_notifier = KeyNotifier()
+        self.key_notifier = None
 
         self.show()
-        winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
+        # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
     def initWindow(self, layout):
         self.setGeometry(750, 250, 700, 700)
@@ -186,11 +187,14 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 9, 2)
-        buttonBack.clicked.connect(lambda: self.maze(layout))
+        buttonBack.clicked.connect(                         # v broj neprijatelja
+            lambda: self.maze(layout, comboBox.currentText(), 8, [textBoxFirst.text(), textBoxSecond.text(),
+                                                                  textBoxThird.text(), textBoxFourth.text()]))
 
         self.setLayout(layout)
 
-    def maze(self, layout):
+    def maze(self, layout, number_of_players, number_of_enemies, player_names):
+
         cleanGrid(layout)
         self.setWindowState(Qt.WindowMaximized)
 
@@ -207,20 +211,21 @@ class MainWindow(QWidget):
         
         layout.addItem(mapLayout)'''
 
-        #layout.addChildLayout(mapLayout)
-        #layout
-        #layout.addChildWidget(labelPlayer1,0,0)
-        #layout.addWidget(labelPlayer1, 0, ,0, 10, 10)
-        #layout.addChildWidget(labelPlayer2, 1,1)
-        #layout.addChildWidget(labelPlayer3,2,2)
-        #layout.addChildWidget(labelPlayer4,3,3)
+        # layout.addChildLayout(mapLayout)
+        # layout
+        # layout.addChildWidget(labelPlayer1,0,0)
+        # layout.addWidget(labelPlayer1, 0, ,0, 10, 10)
+        # layout.addChildWidget(labelPlayer2, 1,1)
+        # layout.addChildWidget(labelPlayer3,2,2)
+        # layout.addChildWidget(labelPlayer4,3,3)
 
-        self.__init_ui__(layout)
+        self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
 
+        self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
 
-    def __init_ui__(self, layout):
+    def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
 
         # layout = QGridLayout()
 
@@ -242,45 +247,34 @@ class MainWindow(QWidget):
         tableGrid.addWidget(QLabel("nesto"), 0, 0)
 
         self.map = Map()
-        self.playerList = []
 
-        enemyCounter = 1
         for i in range(len(self.map.map_matrix)):
             for j in range(len(self.map.map_matrix[0])):
 
                 label = QLabel()
 
-                if self.map.map_matrix[i][j] == -3: # zidovi
+                if self.map.map_matrix[i][j] == -3:  # zidovi
 
                     pixmap = QPixmap('block.png')
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
 
-                elif self.map.map_matrix[i][j] == -4: # ograda
+                elif self.map.map_matrix[i][j] == -4:  # ograda
 
                     pixmap = QPixmap('gate.png')
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
 
-                elif self.map.map_matrix[i][j] == -2:  # pocetna pozicija neprijatelja
-
-                    pixmap = QPixmap('skull' + str(enemyCounter) + '.png')
-                    enemyCounter += 1
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
-
-
-                elif self.map.map_matrix[i][j] == 1: # poeni
+                elif self.map.map_matrix[i][j] == 1:  # poeni
 
                     pixmap = QPixmap('point.png')
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
 
-                elif self.map.map_matrix[i][j] == 2: # veliki poeni
+                elif self.map.map_matrix[i][j] == 2:  # veliki poeni
 
                     pixmap = QPixmap('big_point.png')
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
@@ -290,66 +284,104 @@ class MainWindow(QWidget):
                 # label.setText(str(self.map.map_matrix[i][j]))
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
-
+        self.playerList = []
+        self.playerRotationList = []
+        enemyCounter = 1
         for i in range(len(self.map.map_matrix)):
             for j in range(len(self.map.map_matrix[0])):
+
+                graphScene = QGraphicsScene()
+                graphView = QGraphicsView(graphScene)
                 label = QLabel()
-                if self.map.map_matrix[i][j] == -1: # pocetna pozicija pacmena
+
+                if self.map.map_matrix[i][j] == -1 and len(self.playerList) < int(number_of_players):  # pocetna pozicija pacmena
 
                     movie = QMovie('pacman.gif', QByteArray(), self)
                     movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix))))
+                                              int(mapFrame.height() / len(self.map.map_matrix))))
                     movie.setSpeed(100)
                     label.setMovie(movie)
+                    label.setAttribute(Qt.WA_NoSystemBackground)
                     movie.start()
 
-                    self.playerList.append(label)
+                    graphScene.setBackgroundBrush(Qt.black)
+                    graphScene.addWidget(label)
+                    graphView.setFrameShape(QFrame.NoFrame)
+                    graphView.setStyleSheet("background: transparent")
+                    graphView.setSceneRect(0, 0, label.width(), label.width())
+                    graphView.setFixedSize(label.width(), label.width())
+
+                    self.playerList.append(graphView)
+                    self.playerRotationList.append(0)
+                    self.map.map_matrix[i][j] = len(self.playerList) + 2
+
+                    mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
+
+                elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # pocetna pozicija neprijatelja
+
+                    pixmap = QPixmap('skull_enemy.png')
+                    enemyCounter += 1
+                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                  int(mapFrame.height() / len(self.map.map_matrix)))
+                    label.setPixmap(scaled_pixmap)
+
+                    self.map.map_matrix[i][j] = 7
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.setLayout(layout)
 
-
-#        self.label1.setPixmap(pixmap4)
- #       self.label1.setGeometry(100, 40, 20, 20)
-#
- #       self.label2.setPixmap(self.pix2)
-  #      self.label2.setGeometry(50, 40, 50, 50)
-
-        #layout.addWidget(self.label1)
-        #alayout.addWidget(self.label2)
-
-        #self.show()
-
     def keyPressEvent(self, event):
-        self.key_notifier.add_key(event.key())
+        if self.key_notifier is not None:
+            self.key_notifier.add_key(event.key())
 
     def keyReleaseEvent(self, event):
-        self.key_notifier.rem_key(event.key())
+        if self.key_notifier is not None:
+            self.key_notifier.rem_key(event.key())
 
     def __update_position__(self, key):
-        rec1 = self.playerList[0].geometry()
-        rec2 = self.playerList[1].geometry()
 
+        rec1 = self.playerList[0].geometry()
+
+        # Player 1
         if key == Qt.Key_Right:
+            if self.playerRotationList[0] != 0:
+                self.playerList[0].rotate(-self.playerRotationList[0])
+                self.playerRotationList[0] = 0
             self.playerList[0].setGeometry(rec1.x() + 5, rec1.y(), rec1.width(), rec1.height())
         elif key == Qt.Key_Down:
+            if self.playerRotationList[0] != 90:
+                self.playerList[0].rotate(-self.playerRotationList[0])
+                self.playerList[0].rotate(90)
+                self.playerRotationList[0] = 90
             self.playerList[0].setGeometry(rec1.x(), rec1.y() + 5, rec1.width(), rec1.height())
         elif key == Qt.Key_Up:
+            if self.playerRotationList[0] != -90:
+                self.playerList[0].rotate(-self.playerRotationList[0])
+                self.playerList[0].rotate(-90)
+                self.playerRotationList[0] = -90
             self.playerList[0].setGeometry(rec1.x(), rec1.y() - 5, rec1.width(), rec1.height())
         elif key == Qt.Key_Left:
+            if self.playerRotationList[0] != 180:
+                self.playerList[0].rotate(-self.playerRotationList[0])
+                self.playerList[0].rotate(180)
+                self.playerRotationList[0] = 180
             self.playerList[0].setGeometry(rec1.x() - 5, rec1.y(), rec1.width(), rec1.height())
 
-        if key == Qt.Key_D:
-            self.playerList[1].setGeometry(rec2.x() + 5, rec2.y(), rec2.width(), rec2.height())
-        elif key == Qt.Key_S:
-            self.playerList[1].setGeometry(rec2.x(), rec2.y() + 5, rec2.width(), rec2.height())
-        elif key == Qt.Key_W:
-            self.playerList[1].setGeometry(rec2.x(), rec2.y() - 5, rec2.width(), rec2.height())
-        elif key == Qt.Key_A:
-            self.playerList[1].setGeometry(rec2.x() - 5, rec2.y(), rec2.width(), rec2.height())
+        # Player 2
+        if len(self.playerList) > 1:
+            rec2 = self.playerList[1].geometry()
+            if key == Qt.Key_D:
+                self.playerList[1].setGeometry(rec2.x() + 5, rec2.y(), rec2.width(), rec2.height())
+            elif key == Qt.Key_S:
+                self.playerList[1].setGeometry(rec2.x(), rec2.y() + 5, rec2.width(), rec2.height())
+            elif key == Qt.Key_W:
+                self.playerList[1].setGeometry(rec2.x(), rec2.y() - 5, rec2.width(), rec2.height())
+            elif key == Qt.Key_A:
+                self.playerList[1].setGeometry(rec2.x() - 5, rec2.y(), rec2.width(), rec2.height())
 
     def closeEvent(self, event):
-        self.key_notifier.die()
+        if self.key_notifier is not None:
+            self.key_notifier.die()
 
 
 if __name__ == '__main__':
