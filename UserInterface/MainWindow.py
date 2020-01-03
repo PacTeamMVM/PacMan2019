@@ -29,8 +29,6 @@ def clickBox(state):
 
 
 class MainWindow(QWidget):
-    winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
-
     def __init__(self):
         super().__init__()
         layout = QGridLayout()
@@ -44,6 +42,7 @@ class MainWindow(QWidget):
         self.key_notifier = KeyNotifier()
 
         self.show()
+        winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
     def initWindow(self, layout):
         self.setGeometry(750, 250, 700, 700)
@@ -273,16 +272,6 @@ class MainWindow(QWidget):
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
 
-                elif self.map.map_matrix[i][j] == -1: # pocetna pozicija pacmena
-
-                    movie = QMovie('pacman.gif', QByteArray(), self)
-                    movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                              int(mapFrame.height() / len(self.map.map_matrix))))
-                    movie.setSpeed(100)
-                    label.setMovie(movie)
-                    movie.start()
-
-                    self.playerList.append(label)
 
                 elif self.map.map_matrix[i][j] == 1: # poeni
 
@@ -300,6 +289,22 @@ class MainWindow(QWidget):
 
                 # label.setText(str(self.map.map_matrix[i][j]))
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
+
+
+        for i in range(len(self.map.map_matrix)):
+            for j in range(len(self.map.map_matrix[0])):
+                label = QLabel()
+                if self.map.map_matrix[i][j] == -1: # pocetna pozicija pacmena
+
+                    movie = QMovie('pacman.gif', QByteArray(), self)
+                    movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                  int(mapFrame.height() / len(self.map.map_matrix))))
+                    movie.setSpeed(100)
+                    label.setMovie(movie)
+                    movie.start()
+
+                    self.playerList.append(label)
+                    mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.setLayout(layout)
 
