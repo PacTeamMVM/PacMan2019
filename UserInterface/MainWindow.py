@@ -5,8 +5,8 @@ import winsound
 from PyQt5.QtCore import QByteArray, Qt, QSize
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
-    QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene
-from PyQt5.uic.Compiler.qtproxies import QtGui, QtCore
+    QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
+    QHeaderView
 
 from Map.key_notifier import KeyNotifier
 from Map.Map import Map
@@ -35,15 +35,15 @@ class MainWindow(QWidget):
         layout = QGridLayout()
         self.initWindow(layout)
 
-        # dodao
         self.pix1 = QPixmap('skull_enemy.png')
         self.pix2 = QPixmap('skull_friendly.png')
         self.label1 = QLabel(self)
         self.label2 = QLabel(self)
         self.key_notifier = None
+        self.movie = None
 
         self.show()
-        # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
+        winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
     def initWindow(self, layout):
         self.setGeometry(750, 250, 700, 700)
@@ -124,7 +124,6 @@ class MainWindow(QWidget):
 
     def newGameWindow(self, layout):
         cleanGrid(layout)
-
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
         comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
         textBoxStyle = 'QLineEdit {background-color: white; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
@@ -134,106 +133,94 @@ class MainWindow(QWidget):
         labelPlayers.setStyleSheet(labelStyle)
         layout.addWidget(labelPlayers, 0, 0)
 
-        comboBox = QComboBox()
-        comboBox.setStyleSheet(comboBoxStyle)
-        comboBox.addItem("1")
-        comboBox.addItem("2")
-        comboBox.addItem("4")
-        layout.addWidget(comboBox, 0, 2)
+        comboBoxPlayer = QComboBox()
+        comboBoxPlayer.setStyleSheet(comboBoxStyle)
+        comboBoxPlayer.addItem("1")
+        comboBoxPlayer.addItem("2")
+        comboBoxPlayer.addItem("4")
+        layout.addWidget(comboBoxPlayer, 0, 2)
 
-        labelPlayers = QLabel()
-        labelPlayers.setText("First player")
-        labelPlayers.setStyleSheet(labelStyle)
-        layout.addWidget(labelPlayers, 1, 0)
+        labelEnemies = QLabel()
+        labelEnemies.setText("Number of enemies")
+        labelEnemies.setStyleSheet(labelStyle)
+        layout.addWidget(labelEnemies, 1, 0)
+
+        comboBoxEnemy = QComboBox()
+        comboBoxEnemy.setStyleSheet(comboBoxStyle)
+        for i in range(16):
+            comboBoxEnemy.addItem(str(i+1))
+        layout.addWidget(comboBoxEnemy, 1, 2)
+
+        labelPlayer1 = QLabel()
+        labelPlayer1.setText("First player")
+        labelPlayer1.setStyleSheet(labelStyle)
+        layout.addWidget(labelPlayer1, 2, 0)
 
         textBoxFirst = QLineEdit()
         textBoxFirst.setStyleSheet(textBoxStyle)
-        layout.addWidget(textBoxFirst, 2, 0)
+        layout.addWidget(textBoxFirst, 3, 0)
 
-        labelPlayers = QLabel()
-        labelPlayers.setText("Second player")
-        labelPlayers.setStyleSheet(labelStyle)
-        layout.addWidget(labelPlayers, 3, 0)
+        labelPlayer2 = QLabel()
+        labelPlayer2.setText("Second player")
+        labelPlayer2.setStyleSheet(labelStyle)
+        layout.addWidget(labelPlayer2, 4, 0)
 
         textBoxSecond = QLineEdit()
         textBoxSecond.setStyleSheet(textBoxStyle)
-        layout.addWidget(textBoxSecond, 4, 0)
+        layout.addWidget(textBoxSecond, 5, 0)
 
-        labelPlayers = QLabel()
-        labelPlayers.setText("Third player")
-        labelPlayers.setStyleSheet(labelStyle)
-        layout.addWidget(labelPlayers, 5, 0)
+        labelPlayer3 = QLabel()
+        labelPlayer3.setText("Third player")
+        labelPlayer3.setStyleSheet(labelStyle)
+        layout.addWidget(labelPlayer3, 6, 0)
 
         textBoxThird = QLineEdit()
         textBoxThird.setStyleSheet(textBoxStyle)
-        layout.addWidget(textBoxThird, 6, 0)
+        layout.addWidget(textBoxThird, 7, 0)
 
-        labelPlayers = QLabel()
-        labelPlayers.setText("Fourth player")
-        labelPlayers.setStyleSheet(labelStyle)
-        layout.addWidget(labelPlayers, 7, 0)
+        labelPlayer4 = QLabel()
+        labelPlayer4.setText("Fourth player")
+        labelPlayer4.setStyleSheet(labelStyle)
+        layout.addWidget(labelPlayer4, 8, 0)
 
         textBoxFourth = QLineEdit()
         textBoxFourth.setStyleSheet(textBoxStyle)
-        layout.addWidget(textBoxFourth, 8, 0)
+        layout.addWidget(textBoxFourth, 9, 0)
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
-        layout.addWidget(buttonBack, 9, 0)
+        layout.addWidget(buttonBack, 10, 0)
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
-        buttonBack = QPushButton("PLAY", self)
-        buttonBack.setStyleSheet(
+        buttonPlay = QPushButton("PLAY", self)
+        buttonPlay.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
-        layout.addWidget(buttonBack, 9, 2)
-        buttonBack.clicked.connect(                         # v broj neprijatelja
-            lambda: self.maze(layout, comboBox.currentText(), 8, [textBoxFirst.text(), textBoxSecond.text(),
-                                                                  textBoxThird.text(), textBoxFourth.text()]))
+        layout.addWidget(buttonPlay, 10, 2)
+        buttonPlay.clicked.connect(lambda: self.maze(layout, comboBoxPlayer.currentText(), comboBoxEnemy.currentText(),
+                                                     [textBoxFirst.text(), textBoxSecond.text(), textBoxThird.text(), textBoxFourth.text()]))
 
         self.setLayout(layout)
 
     def maze(self, layout, number_of_players, number_of_enemies, player_names):
-
         cleanGrid(layout)
-        self.setWindowState(Qt.WindowMaximized)
-
-        '''labelPlayer1 = QLabel()
-        labelPlayer1.setText("Player1:")
-        labelPlayer2 = QLabel()
-        labelPlayer2.setText("Player2:")
-        labelPlayer3 = QLabel()
-        labelPlayer3.setText("Player3:")
-        labelPlayer4 = QLabel()
-        labelPlayer4.setText("Player4:")
-
-        mapLayout = QGridLayout()
-        
-        layout.addItem(mapLayout)'''
-
-        # layout.addChildLayout(mapLayout)
-        # layout
-        # layout.addChildWidget(labelPlayer1,0,0)
-        # layout.addWidget(labelPlayer1, 0, ,0, 10, 10)
-        # layout.addChildWidget(labelPlayer2, 1,1)
-        # layout.addChildWidget(labelPlayer3,2,2)
-        # layout.addChildWidget(labelPlayer4,3,3)
 
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
-
+        self.setWindowState(Qt.WindowMaximized)
         self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
 
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
-
-        # layout = QGridLayout()
-
+        winsound.PlaySound(None, winsound.SND_PURGE)
         tableFrame = QFrame()
         mapFrame = QFrame()
 
         mapFrame.setFrameShape(QFrame.NoFrame)
         mapFrame.setLineWidth(0)
+
+        tableFrame.setFrameShape(QFrame.NoFrame)
+        tableFrame.setLineWidth(0)
 
         tableGrid = QGridLayout()
         mapGrid = QGridLayout()
@@ -244,7 +231,30 @@ class MainWindow(QWidget):
         layout.addWidget(tableFrame, 0, 0)
         layout.addWidget(mapFrame, 0, 1)
 
-        tableGrid.addWidget(QLabel("nesto"), 0, 0)
+        tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px; }'
+        tableWidget = QTableWidget()
+        tableWidget.setRowCount(int(number_of_players))
+        tableWidget.setColumnCount(3)
+        tableWidget.setStyleSheet(tableStyle)
+        tableWidget.setHorizontalHeaderLabels(["Name", "Health", "Points"])
+        tableGrid.addWidget(tableWidget)
+
+        for i in range(int(number_of_players)):
+            nameItem = QTableWidgetItem(str(player_names[i]))
+            nameItem.setTextAlignment(Qt.AlignCenter)
+            tableWidget.setItem(i, 0, nameItem)
+            healthItem = QTableWidgetItem("0")
+            healthItem.setTextAlignment(Qt.AlignCenter)
+            tableWidget.setItem(i, 1, healthItem)
+            pointsItem = QTableWidgetItem("0")
+            pointsItem.setTextAlignment(Qt.AlignCenter)
+            tableWidget.setItem(i, 2, pointsItem)
+
+        buttonBack = QPushButton("BACK", self)
+        buttonBack.setStyleSheet(
+            'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
+        layout.addWidget(buttonBack, 1, 0)
+        buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
         self.map = Map()
 
