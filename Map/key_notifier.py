@@ -33,6 +33,9 @@ class KeyNotifier(QObject):
     def rem_key(self, key):
         self.keys.remove(key)
 
+    def get_keys(self):
+        return self.keys
+
     def die(self):
         """
         End notifications.

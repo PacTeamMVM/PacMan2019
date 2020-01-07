@@ -6,7 +6,7 @@ from PyQt5.QtCore import QByteArray, Qt, QSize
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
-    QHeaderView
+    QHeaderView, QDesktopWidget
 
 from Map.key_notifier import KeyNotifier
 from Map.Map import Map
@@ -43,10 +43,14 @@ class MainWindow(QWidget):
         self.movie = None
 
         self.show()
-        winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
+        # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
     def initWindow(self, layout):
         self.setGeometry(750, 250, 700, 700)
+        qtRectangle = self.frameGeometry()
+        centerPoint = QDesktopWidget().availableGeometry().center()
+        qtRectangle.moveCenter(centerPoint)
+        self.move(qtRectangle.topLeft())
         self.setWindowTitle("PacMan2020")
         absolutePath = os.path.dirname(__file__)
         picturePath = os.path.join(absolutePath[0:len(absolutePath) - 13:1], 'Pictures/icon.jpg')
@@ -308,7 +312,7 @@ class MainWindow(QWidget):
 
                     movie = QMovie('pacman.gif', QByteArray(), self)
                     movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                              int(mapFrame.height() / len(self.map.map_matrix))))
+                                              int(mapFrame.width() / len(self.map.map_matrix))))
                     movie.setSpeed(100)
                     label.setMovie(movie)
                     label.setAttribute(Qt.WA_NoSystemBackground)
@@ -350,49 +354,60 @@ class MainWindow(QWidget):
 
     def __update_position__(self, key):
 
-        rec1 = self.playerList[0].geometry()
+        # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
+        player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
+                       [Qt.Key_W,  Qt.Key_S,    Qt.Key_A,    Qt.Key_D]
+                       # TODO: Player 3 keys
+                       # TODO: Player 4 keys
+                       ]
 
-        # Player 1
-        if key == Qt.Key_Right:
-            if self.playerRotationList[0] != 0:
-                self.playerList[0].rotate(-self.playerRotationList[0])
-                self.playerRotationList[0] = 0
-            self.playerList[0].setGeometry(rec1.x() + 5, rec1.y(), rec1.width(), rec1.height())
-        elif key == Qt.Key_Down:
-            if self.playerRotationList[0] != 90:
-                self.playerList[0].rotate(-self.playerRotationList[0])
-                self.playerList[0].rotate(90)
-                self.playerRotationList[0] = 90
-            self.playerList[0].setGeometry(rec1.x(), rec1.y() + 5, rec1.width(), rec1.height())
-        elif key == Qt.Key_Up:
-            if self.playerRotationList[0] != -90:
-                self.playerList[0].rotate(-self.playerRotationList[0])
-                self.playerList[0].rotate(-90)
-                self.playerRotationList[0] = -90
-            self.playerList[0].setGeometry(rec1.x(), rec1.y() - 5, rec1.width(), rec1.height())
-        elif key == Qt.Key_Left:
-            if self.playerRotationList[0] != 180:
-                self.playerList[0].rotate(-self.playerRotationList[0])
-                self.playerList[0].rotate(180)
-                self.playerRotationList[0] = 180
-            self.playerList[0].setGeometry(rec1.x() - 5, rec1.y(), rec1.width(), rec1.height())
+        pressed_keys = self.key_notifier.get_keys()
+        for i in range(len(self.playerList)):
+            if self.contains_at_least_one(pressed_keys, player_keys[i]):
 
-        # Player 2
-        if len(self.playerList) > 1:
-            rec2 = self.playerList[1].geometry()
-            if key == Qt.Key_D:
-                self.playerList[1].setGeometry(rec2.x() + 5, rec2.y(), rec2.width(), rec2.height())
-            elif key == Qt.Key_S:
-                self.playerList[1].setGeometry(rec2.x(), rec2.y() + 5, rec2.width(), rec2.height())
-            elif key == Qt.Key_W:
-                self.playerList[1].setGeometry(rec2.x(), rec2.y() - 5, rec2.width(), rec2.height())
-            elif key == Qt.Key_A:
-                self.playerList[1].setGeometry(rec2.x() - 5, rec2.y(), rec2.width(), rec2.height())
+                rect = self.playerList[i].geometry()
+
+                # Do the check for the player
+                if key == player_keys[i][0]:
+                    if self.playerRotationList[i] != -90:
+                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(-90)
+                        self.playerRotationList[i] = -90
+                    if self.check_collision(self.playerList[i], 0, -5):
+                        self.playerList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height())
+                elif key == player_keys[i][1]:
+                    if self.playerRotationList[i] != 90:
+                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(90)
+                        self.playerRotationList[i] = 90
+                    self.playerList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
+                elif key == player_keys[i][2]:
+                    if self.playerRotationList[i] != 180:
+                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(180)
+                        self.playerRotationList[i] = 180
+                    self.playerList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+                elif key == player_keys[i][3]:
+                    if self.playerRotationList[i] != 0:
+                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerRotationList[i] = 0
+                    self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
             self.key_notifier.die()
 
+    def contains_at_least_one(self, small, big):
+
+        for i in range(len(small)):
+            for j in range(len(big)):
+                if small[i] == big[j]:
+                    return True
+
+        return False
+
+    def check_collision(self, player_label, x_movement, y_movement):
+        return True
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
