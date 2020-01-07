@@ -1,8 +1,9 @@
+import copy
 import os
 import sys
 import winsound
 
-from PyQt5.QtCore import QByteArray, Qt, QSize
+from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
@@ -41,6 +42,13 @@ class MainWindow(QWidget):
         self.label2 = QLabel(self)
         self.key_notifier = None
         self.movie = None
+
+        # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
+        self.player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
+                            [Qt.Key_W,  Qt.Key_S,    Qt.Key_A,    Qt.Key_D]
+                            # TODO: Player 3 keys
+                            # TODO: Player 4 keys
+                            ]
 
         self.show()
         # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
@@ -261,6 +269,13 @@ class MainWindow(QWidget):
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
         self.map = Map()
+        self.map_grid = mapGrid
+        self.map_wall_labels = []
+        self.map_fence_labels = []
+        self.map_point_labels = []
+        self.map_point_label_row = []
+        self.map_point_label_column = []
+        self.map_big_point_labels = []
 
         for i in range(len(self.map.map_matrix)):
             for j in range(len(self.map.map_matrix[0])):
@@ -273,6 +288,7 @@ class MainWindow(QWidget):
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
+                    self.map_wall_labels.append(label)
 
                 elif self.map.map_matrix[i][j] == -4:  # ograda
 
@@ -280,6 +296,7 @@ class MainWindow(QWidget):
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
+                    self.map_fence_labels.append(label)
 
                 elif self.map.map_matrix[i][j] == 1:  # poeni
 
@@ -287,6 +304,9 @@ class MainWindow(QWidget):
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
+                    self.map_point_labels.append(label)
+                    self.map_point_label_row.append(i)
+                    self.map_point_label_column.append(j)
 
                 elif self.map.map_matrix[i][j] == 2:  # veliki poeni
 
@@ -294,6 +314,7 @@ class MainWindow(QWidget):
                     scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
+                    self.map_big_point_labels.append(label)
 
                 # label.setText(str(self.map.map_matrix[i][j]))
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
@@ -327,7 +348,7 @@ class MainWindow(QWidget):
 
                     self.playerList.append(graphView)
                     self.playerRotationList.append(0)
-                    self.map.map_matrix[i][j] = len(self.playerList) + 2
+                    self.map.map_matrix[i][j] = len(self.playerList) + 2 # Setting players on the map
 
                     mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
 
@@ -339,59 +360,66 @@ class MainWindow(QWidget):
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaled_pixmap)
 
-                    self.map.map_matrix[i][j] = 7
+                    self.map.map_matrix[i][j] = 7 # Setting enemies on the map
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.setLayout(layout)
 
     def keyPressEvent(self, event):
         if self.key_notifier is not None:
+            # Check to see if some player's key is already inputted.
+            for i in range(len(self.playerList)):
+                if self.contains_at_least_one([event.key()], self.player_keys[i]):
+                    if self.contains_at_least_one(self.key_notifier.get_keys(), self.player_keys[i]):
+                        # The player cannot input multiple directions of movement, so we just return out of this method.
+                        return
             self.key_notifier.add_key(event.key())
 
     def keyReleaseEvent(self, event):
         if self.key_notifier is not None:
-            self.key_notifier.rem_key(event.key())
+            # Check to see if it's in the list of active keys so the program doesn't break if it's not.
+            if self.contains_at_least_one([event.key()], self.key_notifier.get_keys()):
+                self.key_notifier.rem_key(event.key())
 
     def __update_position__(self, key):
 
-        # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
-        player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
-                       [Qt.Key_W,  Qt.Key_S,    Qt.Key_A,    Qt.Key_D]
-                       # TODO: Player 3 keys
-                       # TODO: Player 4 keys
-                       ]
-
         pressed_keys = self.key_notifier.get_keys()
         for i in range(len(self.playerList)):
-            if self.contains_at_least_one(pressed_keys, player_keys[i]):
+            pressed_key = self.contains_at_least_one(pressed_keys, self.player_keys[i])
+            if pressed_key:
 
                 rect = self.playerList[i].geometry()
 
                 # Do the check for the player
-                if key == player_keys[i][0]:
+                if pressed_key == self.player_keys[i][0]:
                     if self.playerRotationList[i] != -90:
                         self.playerList[i].rotate(-self.playerRotationList[0])
                         self.playerList[i].rotate(-90)
                         self.playerRotationList[i] = -90
-                    if self.check_collision(self.playerList[i], 0, -5):
+                    if not self.check_collision(self.playerList[i], 0, -5):
                         self.playerList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height())
-                elif key == player_keys[i][1]:
+                elif pressed_key == self.player_keys[i][1]:
                     if self.playerRotationList[i] != 90:
                         self.playerList[i].rotate(-self.playerRotationList[0])
                         self.playerList[i].rotate(90)
                         self.playerRotationList[i] = 90
-                    self.playerList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
-                elif key == player_keys[i][2]:
+                    if not self.check_collision(self.playerList[i], 0, self.playerList[i].height() + 5):
+                        self.playerList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
+                elif pressed_key == self.player_keys[i][2]:
                     if self.playerRotationList[i] != 180:
                         self.playerList[i].rotate(-self.playerRotationList[0])
                         self.playerList[i].rotate(180)
                         self.playerRotationList[i] = 180
-                    self.playerList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
-                elif key == player_keys[i][3]:
+                    if not self.check_collision(self.playerList[i], -5, 0):
+                        self.playerList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+                elif pressed_key == self.player_keys[i][3]:
                     if self.playerRotationList[i] != 0:
                         self.playerList[i].rotate(-self.playerRotationList[0])
                         self.playerRotationList[i] = 0
-                    self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
+                    if not self.check_collision(self.playerList[i], self.playerList[i].width() + 5, 0):
+                        self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
+
+                self.collect_points(self.playerList[i])
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
@@ -402,12 +430,32 @@ class MainWindow(QWidget):
         for i in range(len(small)):
             for j in range(len(big)):
                 if small[i] == big[j]:
-                    return True
+                    return small[i]
 
         return False
 
     def check_collision(self, player_label, x_movement, y_movement):
-        return True
+        for i in range(len(self.map_wall_labels)):
+            rect = player_label.geometry()
+            rect.setX(rect.x() + x_movement)
+            rect.setY(rect.y() + y_movement)
+            if self.map_wall_labels[i].geometry().intersects(rect):
+                return True
+        return False
+
+    def collect_points(self, player_label):
+        rect = player_label.geometry()
+        for i in range(len(self.map_point_labels)):
+            point_rect = copy.copy(self.map_point_labels[i].geometry())
+            point_rect.setX(point_rect.x() + point_rect.width() / 3)
+            point_rect.setY(point_rect.y() + point_rect.height() / 3)
+            point_rect.setWidth(point_rect.width() / 3)
+            point_rect.setHeight(point_rect.height() / 3)
+            if point_rect.intersects(rect):
+                self.map_grid.itemAtPosition(self.map_point_label_row[i], self.map_point_label_column[i]).setGeometry(QRect(0, 0, 0, 0))
+                break
+        player_label.setGeometry(rect)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
