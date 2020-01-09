@@ -68,7 +68,7 @@ class MainWindow(QWidget):
         cleanGrid(layout)
         self.animation(layout)
 
-        buttonStyle = 'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; fon-size:36px; ' \
+        buttonStyle = 'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; font-size:25px; ' \
                       'height:48px; width: 120px} '
         buttonNewGame = QPushButton("NEW GAME", self)
         buttonNewGame.setStyleSheet(buttonStyle)
@@ -88,7 +88,7 @@ class MainWindow(QWidget):
         checkBox = QCheckBox(self)
         checkBox.setChecked(True)
         checkBox.setText("SOUND")
-        checkBoxStyle = 'QCheckBox {background-color: transparent; color: red; font: 10pt, Consoles; fon-size:36px; ' \
+        checkBoxStyle = 'QCheckBox {background-color: transparent; color: red; font: 10pt, Consoles; font-size:15px; ' \
                         'height:48px; width: 120px} '
         checkBox.setStyleSheet(checkBoxStyle)
         layout.addWidget(checkBox, 4, 0)
@@ -130,15 +130,15 @@ class MainWindow(QWidget):
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
-            'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 1, 0)
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
     def newGameWindow(self, layout):
         cleanGrid(layout)
-        labelStyle = 'QLabel {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
-        comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
-        textBoxStyle = 'QLineEdit {background-color: white; color: red; font: 10pt, Consoles; height:48px; width: 120px}'
+        labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+        comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+        textBoxStyle = 'QLineEdit {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
 
         labelPlayers = QLabel()
         labelPlayers.setText("Number od players")
@@ -201,13 +201,13 @@ class MainWindow(QWidget):
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
-            'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 10, 0)
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
         buttonPlay = QPushButton("PLAY", self)
         buttonPlay.setStyleSheet(
-            'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonPlay, 10, 2)
         buttonPlay.clicked.connect(lambda: self.maze(layout, comboBoxPlayer.currentText(), comboBoxEnemy.currentText(),
                                                      [textBoxFirst.text(), textBoxSecond.text(), textBoxThird.text(), textBoxFourth.text()]))
@@ -264,7 +264,7 @@ class MainWindow(QWidget):
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
-            'QPushButton {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px}')
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 1, 0)
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
@@ -331,7 +331,7 @@ class MainWindow(QWidget):
 
                 if self.map.map_matrix[i][j] == -1 and len(self.playerList) < int(number_of_players):  # pocetna pozicija pacmena
 
-                    movie = QMovie('pacman.gif', QByteArray(), self)
+                    movie = QMovie('Player1.gif', QByteArray(), self)
                     movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                               int(mapFrame.width() / len(self.map.map_matrix))))
                     movie.setSpeed(100)
