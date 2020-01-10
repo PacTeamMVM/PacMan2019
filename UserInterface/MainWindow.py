@@ -45,9 +45,9 @@ class MainWindow(QWidget):
 
         # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
         self.player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
-                            [Qt.Key_W,  Qt.Key_S,    Qt.Key_A,    Qt.Key_D]
-                            # TODO: Player 3 keys
-                            # TODO: Player 4 keys
+                            [Qt.Key_W,  Qt.Key_S,    Qt.Key_A,    Qt.Key_D],
+                            [Qt.Key_8,  Qt.Key_5,    Qt.Key_4,    Qt.Key_6],
+                            [Qt.Key_I,  Qt.Key_K,    Qt.Key_J,    Qt.Key_L]
                             ]
 
         self.show()
@@ -254,13 +254,17 @@ class MainWindow(QWidget):
         for i in range(int(number_of_players)):
             nameItem = QTableWidgetItem(str(player_names[i]))
             nameItem.setTextAlignment(Qt.AlignCenter)
+            nameItem.setFlags(Qt.ItemIsEnabled)
             tableWidget.setItem(i, 0, nameItem)
             healthItem = QTableWidgetItem("0")
             healthItem.setTextAlignment(Qt.AlignCenter)
+            healthItem.setFlags(Qt.ItemIsEnabled)
             tableWidget.setItem(i, 1, healthItem)
             pointsItem = QTableWidgetItem("0")
             pointsItem.setTextAlignment(Qt.AlignCenter)
+            pointsItem.setFlags(Qt.ItemIsEnabled)
             tableWidget.setItem(i, 2, pointsItem)
+            tableWidget.setFocusPolicy(Qt.NoFocus)
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
@@ -281,7 +285,6 @@ class MainWindow(QWidget):
             for j in range(len(self.map.map_matrix[0])):
 
                 label = QLabel()
-
                 if self.map.map_matrix[i][j] == -3:  # zidovi
 
                     pixmap = QPixmap('block.png')
@@ -322,6 +325,9 @@ class MainWindow(QWidget):
         self.playerList = []
         self.playerRotationList = []
         enemyCounter = 1
+
+        player_counter = 0
+
         for i in range(len(self.map.map_matrix)):
             for j in range(len(self.map.map_matrix[0])):
 
@@ -331,7 +337,17 @@ class MainWindow(QWidget):
 
                 if self.map.map_matrix[i][j] == -1 and len(self.playerList) < int(number_of_players):  # pocetna pozicija pacmena
 
-                    movie = QMovie('Player1.gif', QByteArray(), self)
+                    if player_counter == 0:
+                        movie = QMovie('Player1.gif', QByteArray(), self)
+                    elif player_counter == 1:
+                        movie = QMovie('Player2.gif', QByteArray(), self)
+                    elif player_counter == 2:
+                        movie = QMovie('Player3.gif', QByteArray(), self)
+                    elif player_counter == 3:
+                        movie = QMovie('Player4.gif', QByteArray(), self)
+
+                    player_counter += 1
+
                     movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                               int(mapFrame.width() / len(self.map.map_matrix))))
                     movie.setSpeed(100)
