@@ -2,12 +2,13 @@ import copy
 import os
 import sys
 import winsound
+from multiprocessing.pool import Pool
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
-    QHeaderView, QDesktopWidget
+    QDesktopWidget
 
 from Map.key_notifier import KeyNotifier
 from Map.Map import Map
@@ -210,7 +211,8 @@ class MainWindow(QWidget):
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonPlay, 10, 2)
         buttonPlay.clicked.connect(lambda: self.maze(layout, comboBoxPlayer.currentText(), comboBoxEnemy.currentText(),
-                                                     [textBoxFirst.text(), textBoxSecond.text(), textBoxThird.text(), textBoxFourth.text()]))
+                                                     [textBoxFirst.text(), textBoxSecond.text(), textBoxThird.text(),
+                                                      textBoxFourth.text()]))
 
         self.setLayout(layout)
 
@@ -219,6 +221,7 @@ class MainWindow(QWidget):
 
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
         self.setWindowState(Qt.WindowMaximized)
+
         self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
@@ -243,7 +246,8 @@ class MainWindow(QWidget):
         layout.addWidget(tableFrame, 0, 0)
         layout.addWidget(mapFrame, 0, 1)
 
-        tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; width: 120px; }'
+        tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; ' \
+                     'width: 120px; }'
         tableWidget = QTableWidget()
         tableWidget.setRowCount(int(number_of_players))
         tableWidget.setColumnCount(3)
@@ -363,7 +367,10 @@ class MainWindow(QWidget):
                     graphView.setFixedSize(label.width(), label.width())
 
                     self.playerList.append(graphView)
-                    self.playerRotationList.append(0)
+
+                    for player in range(int(number_of_players)):
+                        self.playerRotationList.append(0)
+
                     self.map.map_matrix[i][j] = len(self.playerList) + 2 # Setting players on the map
 
                     mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
@@ -383,21 +390,20 @@ class MainWindow(QWidget):
 
     def keyPressEvent(self, event):
         if self.key_notifier is not None:
-            # Check to see if some player's key is already inputted.
             for i in range(len(self.playerList)):
-                if self.contains_at_least_one([event.key()], self.player_keys[i]):
-                    if self.contains_at_least_one(self.key_notifier.get_keys(), self.player_keys[i]):
-                        # The player cannot input multiple directions of movement, so we just return out of this method.
-                        return
+                # The player cannot input multiple directions of movement, so we just return out of this method.
+                if self.contains_at_least_one([event.key()], self.player_keys[i]) and self.contains_at_least_one(
+                        self.key_notifier.get_keys(), self.player_keys[i]):
+
+                    return
             self.key_notifier.add_key(event.key())
 
     def keyReleaseEvent(self, event):
-        if self.key_notifier is not None:
-            # Check to see if it's in the list of active keys so the program doesn't break if it's not.
-            if self.contains_at_least_one([event.key()], self.key_notifier.get_keys()):
-                self.key_notifier.rem_key(event.key())
+        # Check to see if it's in the list of active keys so the program doesn't break if it's not.
+        if self.key_notifier is not None and self.contains_at_least_one([event.key()], self.key_notifier.get_keys()):
+            self.key_notifier.rem_key(event.key())
 
-    def __update_position__(self, key):
+    def __update_position__(self):
 
         pressed_keys = self.key_notifier.get_keys()
         for i in range(len(self.playerList)):
@@ -409,28 +415,28 @@ class MainWindow(QWidget):
                 # Do the check for the player
                 if pressed_key == self.player_keys[i][0]:
                     if self.playerRotationList[i] != -90:
-                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(-self.playerRotationList[i])
                         self.playerList[i].rotate(-90)
                         self.playerRotationList[i] = -90
                     if not self.check_collision(self.playerList[i], 0, -5):
                         self.playerList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height())
                 elif pressed_key == self.player_keys[i][1]:
                     if self.playerRotationList[i] != 90:
-                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(-self.playerRotationList[i])
                         self.playerList[i].rotate(90)
                         self.playerRotationList[i] = 90
                     if not self.check_collision(self.playerList[i], 0, self.playerList[i].height() + 5):
                         self.playerList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
                 elif pressed_key == self.player_keys[i][2]:
                     if self.playerRotationList[i] != 180:
-                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(-self.playerRotationList[i])
                         self.playerList[i].rotate(180)
                         self.playerRotationList[i] = 180
                     if not self.check_collision(self.playerList[i], -5, 0):
                         self.playerList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
                 elif pressed_key == self.player_keys[i][3]:
                     if self.playerRotationList[i] != 0:
-                        self.playerList[i].rotate(-self.playerRotationList[0])
+                        self.playerList[i].rotate(-self.playerRotationList[i])
                         self.playerRotationList[i] = 0
                     if not self.check_collision(self.playerList[i], self.playerList[i].width() + 5, 0):
                         self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
@@ -441,12 +447,11 @@ class MainWindow(QWidget):
         if self.key_notifier is not None:
             self.key_notifier.die()
 
-    def contains_at_least_one(self, small, big):
-
-        for i in range(len(small)):
-            for j in range(len(big)):
-                if small[i] == big[j]:
-                    return small[i]
+    def contains_at_least_one(self, currentKeys, allCommand):
+        for i in range(len(currentKeys)):
+            for j in range(len(allCommand)):
+                if currentKeys[i] == allCommand[j]:
+                    return currentKeys[i]
 
         return False
 
@@ -461,14 +466,14 @@ class MainWindow(QWidget):
 
     def collect_points(self, player_label):
         rect = player_label.geometry()
-        for i in range(len(self.map_point_labels)):
-            point_rect = copy.copy(self.map_point_labels[i].geometry())
+        for j in range(len(self.map_point_labels)):
+            point_rect = copy.copy(self.map_point_labels[j].geometry())
             point_rect.setX(point_rect.x() + point_rect.width() / 3)
             point_rect.setY(point_rect.y() + point_rect.height() / 3)
             point_rect.setWidth(point_rect.width() / 3)
             point_rect.setHeight(point_rect.height() / 3)
             if point_rect.intersects(rect):
-                self.map_grid.itemAtPosition(self.map_point_label_row[i], self.map_point_label_column[i]).setGeometry(QRect(0, 0, 0, 0))
+                self.map_grid.itemAtPosition(self.map_point_label_row[j], self.map_point_label_column[j]).setGeometry(QRect(0, 0, 0, 0))
                 break
         player_label.setGeometry(rect)
 
