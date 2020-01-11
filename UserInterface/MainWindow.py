@@ -2,14 +2,15 @@ import copy
 import os
 import sys
 import winsound
-from multiprocessing.pool import Pool
+from threading import Lock
 
-from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
+from PyQt5.QtCore import QByteArray, Qt, QSize, QRect, QTimer
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
     QDesktopWidget
 
+from Map.Points import Points
 from Map.key_notifier import KeyNotifier
 from Map.Map import Map
 
@@ -50,6 +51,9 @@ class MainWindow(QWidget):
                             [Qt.Key_8,  Qt.Key_5,    Qt.Key_4,    Qt.Key_6],
                             [Qt.Key_I,  Qt.Key_K,    Qt.Key_J,    Qt.Key_L]
                             ]
+
+        #self.playersAndPoints = {}
+        self.points = Points()              #objekat u kome ce se nalaziti svi poeni igraca
 
         self.show()
         # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
@@ -223,6 +227,7 @@ class MainWindow(QWidget):
         self.setWindowState(Qt.WindowMaximized)
 
         self.key_notifier = KeyNotifier()
+
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
 
@@ -248,27 +253,39 @@ class MainWindow(QWidget):
 
         tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; ' \
                      'width: 120px; }'
-        tableWidget = QTableWidget()
-        tableWidget.setRowCount(int(number_of_players))
-        tableWidget.setColumnCount(3)
-        tableWidget.setStyleSheet(tableStyle)
-        tableWidget.setHorizontalHeaderLabels(["Name", "Health", "Points"])
-        tableGrid.addWidget(tableWidget)
+        self.tableWidget = QTableWidget()
+        self.tableWidget.setRowCount(int(number_of_players))
+        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setStyleSheet(tableStyle)
+        self.tableWidget.setHorizontalHeaderLabels(["Name", "Health", "Points"])
+        tableGrid.addWidget(self.tableWidget)
 
         for i in range(int(number_of_players)):
             nameItem = QTableWidgetItem(str(player_names[i]))
             nameItem.setTextAlignment(Qt.AlignCenter)
             nameItem.setFlags(Qt.ItemIsEnabled)
-            tableWidget.setItem(i, 0, nameItem)
-            healthItem = QTableWidgetItem("0")
+            self.tableWidget.setItem(i, 0, nameItem)
+            healthItem = QTableWidgetItem("3")
             healthItem.setTextAlignment(Qt.AlignCenter)
             healthItem.setFlags(Qt.ItemIsEnabled)
-            tableWidget.setItem(i, 1, healthItem)
+            self.tableWidget.setItem(i, 1, healthItem)
             pointsItem = QTableWidgetItem("0")
             pointsItem.setTextAlignment(Qt.AlignCenter)
             pointsItem.setFlags(Qt.ItemIsEnabled)
-            tableWidget.setItem(i, 2, pointsItem)
-            tableWidget.setFocusPolicy(Qt.NoFocus)
+            self.tableWidget.setItem(i, 2, pointsItem)
+            self.tableWidget.setFocusPolicy(Qt.NoFocus)
+
+            #popunjavanje imena i pocetnih poena svih igraca
+            '''for i in player_names:
+                self.playersAndPoints[i] = 0'''
+
+            self.points.pointsPlayer1 = 0
+            self.points.pointsPlayer2 = 0
+            self.points.pointsPlayer3 = 0
+            self.points.pointsPlayer4 = 0
+
+            #napravicu listu u kojoj ce mi biti imena svih igraca...treba za upisivanje poena u tabelu
+            self.players = player_names
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
@@ -441,7 +458,7 @@ class MainWindow(QWidget):
                     if not self.check_collision(self.playerList[i], self.playerList[i].width() + 5, 0):
                         self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
 
-                self.collect_points(self.playerList[i])
+                self.collect_points(self.playerList[i], i)
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
@@ -464,7 +481,8 @@ class MainWindow(QWidget):
                 return True
         return False
 
-    def collect_points(self, player_label):
+    def collect_points(self, player_label, index):
+        lock = Lock()
         rect = player_label.geometry()
         for j in range(len(self.map_point_labels)):
             point_rect = copy.copy(self.map_point_labels[j].geometry())
@@ -474,6 +492,49 @@ class MainWindow(QWidget):
             point_rect.setHeight(point_rect.height() / 3)
             if point_rect.intersects(rect):
                 self.map_grid.itemAtPosition(self.map_point_label_row[j], self.map_point_label_column[j]).setGeometry(QRect(0, 0, 0, 0))
+
+                rowCount = self.tableWidget.rowCount()
+                for row in range(rowCount):
+                    item = self.tableWidget.item(row, 0)
+                    itemText = item.text()
+
+                    if itemText == self.players[index]:
+                        self.points.normalPointsIncrement(index)
+                        if index == 0:
+                            pointsItem = QTableWidgetItem(str(self.points.pointsPlayer1))
+                        elif index == 1:
+                            pointsItem = QTableWidgetItem(str(self.points.pointsPlayer2))
+                        elif index == 2:
+                            pointsItem = QTableWidgetItem(str(self.points.pointsPlayer3))
+                        else:
+                            pointsItem = QTableWidgetItem(str(self.points.pointsPlayer4))
+
+                        pointsItem.setTextAlignment(Qt.AlignCenter)
+                        pointsItem.setFlags(Qt.ItemIsEnabled)
+                        self.tableWidget.setItem(row, 2, pointsItem)
+                '''rowCount = self.tableWidget.rowCount()
+
+                index = 0
+                for row in range(rowCount):
+                    item = self.tableWidget.item(row, 0)
+                    itemText = item.text()
+
+                    keyList = list(self.playersAndPoints.keys())
+                    valueList = list(self.playersAndPoints.values())
+
+                    if str(itemText) == keyList[index]:
+
+                        lock.acquire()
+                        newPoints = valueList[index] + 10
+                        self.playersAndPoints[index] = str(newPoints)
+
+                        pointsItem = QTableWidgetItem(str(newPoints))
+                        pointsItem.setTextAlignment(Qt.AlignCenter)
+                        pointsItem.setFlags(Qt.ItemIsEnabled)
+                        self.tableWidget.setItem(row, 2, pointsItem)
+
+                        lock.release()
+                    index += 1'''
                 break
         player_label.setGeometry(rect)
 
