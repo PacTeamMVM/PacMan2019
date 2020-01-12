@@ -2,9 +2,9 @@ import copy
 import os
 import sys
 import winsound
-from threading import Lock
+# from threading import Lock
 
-from PyQt5.QtCore import QByteArray, Qt, QSize, QRect, QTimer
+from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
@@ -32,18 +32,33 @@ def clickBox(state):
         winsound.PlaySound(None, winsound.SND_PURGE)
 
 
+def contains_at_least_one(currentKeys, allCommand):
+    for i in range(len(currentKeys)):
+        for j in range(len(allCommand)):
+            if currentKeys[i] == allCommand[j]:
+                return currentKeys[i]
+
+    return False
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         layout = QGridLayout()
         self.initWindow(layout)
 
+        self.block = QPixmap('block.png')
         self.pix1 = QPixmap('skull_enemy.png')
         self.pix2 = QPixmap('skull_friendly.png')
+        self.gatePix = QPixmap('gate.png')
+        self.pointPix = QPixmap('point.png')
+        self.bigPointPix = QPixmap('big_point.png')
         self.label1 = QLabel(self)
         self.label2 = QLabel(self)
         self.key_notifier = None
         self.movie = None
+        self.moviePlayer = None
+        self.playerNames = None
 
         # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
         self.player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
@@ -52,11 +67,11 @@ class MainWindow(QWidget):
                             [Qt.Key_I,  Qt.Key_K,    Qt.Key_J,    Qt.Key_L]
                             ]
 
-        #self.playersAndPoints = {}
-        self.points = Points()              #objekat u kome ce se nalaziti svi poeni igraca
+        # object for players points
+        self.points = Points()
 
         self.show()
-        # winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
+        winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
     def initWindow(self, layout):
         self.setGeometry(750, 250, 700, 700)
@@ -105,7 +120,7 @@ class MainWindow(QWidget):
         movie_screen = QLabel()
         movie_screen.setAlignment(Qt.AlignCenter)
         absolutePath = os.path.dirname(__file__)
-        picturePath = absolutePath[0:len(absolutePath) - 14:1] + '/Pictures/pacmanGif.gif'
+        picturePath = absolutePath[0:len(absolutePath) - 14:1] + '/Pictures/homeMovie.gif'
         self.movie = QMovie(picturePath, QByteArray(), self)
         self.movie.setSpeed(100)
         movie_screen.setMovie(self.movie)
@@ -225,20 +240,16 @@ class MainWindow(QWidget):
 
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
         self.setWindowState(Qt.WindowMaximized)
-
         self.key_notifier = KeyNotifier()
-
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
 
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
-        winsound.PlaySound(None, winsound.SND_PURGE)
         tableFrame = QFrame()
         mapFrame = QFrame()
 
         mapFrame.setFrameShape(QFrame.NoFrame)
         mapFrame.setLineWidth(0)
-
         tableFrame.setFrameShape(QFrame.NoFrame)
         tableFrame.setLineWidth(0)
 
@@ -247,7 +258,6 @@ class MainWindow(QWidget):
 
         tableFrame.setLayout(tableGrid)
         mapFrame.setLayout(mapGrid)
-
         layout.addWidget(tableFrame, 0, 0)
         layout.addWidget(mapFrame, 0, 1)
 
@@ -275,17 +285,14 @@ class MainWindow(QWidget):
             self.tableWidget.setItem(i, 2, pointsItem)
             self.tableWidget.setFocusPolicy(Qt.NoFocus)
 
-            #popunjavanje imena i pocetnih poena svih igraca
-            '''for i in player_names:
-                self.playersAndPoints[i] = 0'''
-
+            # set point counters on zero
             self.points.pointsPlayer1 = 0
             self.points.pointsPlayer2 = 0
             self.points.pointsPlayer3 = 0
             self.points.pointsPlayer4 = 0
 
-            #napravicu listu u kojoj ce mi biti imena svih igraca...treba za upisivanje poena u tabelu
-            self.players = player_names
+            #list of all players which play current game
+            self.playerNames = player_names
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
@@ -304,43 +311,27 @@ class MainWindow(QWidget):
 
         for i in range(len(self.map.map_matrix)):
             for j in range(len(self.map.map_matrix[0])):
-
                 label = QLabel()
-                if self.map.map_matrix[i][j] == -3:  # zidovi
-
-                    pixmap = QPixmap('block.png')
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                if self.map.map_matrix[i][j] == -3:  # block
+                    scaledPix = self.block.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
                                                   int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
+                    label.setPixmap(scaledPix)
                     self.map_wall_labels.append(label)
 
-                elif self.map.map_matrix[i][j] == -4:  # ograda
-
-                    pixmap = QPixmap('gate.png')
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
+                elif self.map.map_matrix[i][j] == -4:  # gate
+                    scaledPix = self.gatePix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                    int(mapFrame.height() / len(self.map.map_matrix)))
+                    label.setPixmap(scaledPix)
                     self.map_fence_labels.append(label)
 
-                elif self.map.map_matrix[i][j] == 1:  # poeni
-
-                    pixmap = QPixmap('point.png')
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
+                elif self.map.map_matrix[i][j] == 1:  # points
+                    scaledPix = self.pointPix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                     int(mapFrame.height() / len(self.map.map_matrix)))
+                    label.setPixmap(scaledPix)
                     self.map_point_labels.append(label)
                     self.map_point_label_row.append(i)
                     self.map_point_label_column.append(j)
 
-                elif self.map.map_matrix[i][j] == 2:  # veliki poeni
-
-                    pixmap = QPixmap('big_point.png')
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
-                    self.map_big_point_labels.append(label)
-
-                # label.setText(str(self.map.map_matrix[i][j]))
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.playerList = []
@@ -356,25 +347,24 @@ class MainWindow(QWidget):
                 graphView = QGraphicsView(graphScene)
                 label = QLabel()
 
-                if self.map.map_matrix[i][j] == -1 and len(self.playerList) < int(number_of_players):  # pocetna pozicija pacmena
-
+                if self.map.map_matrix[i][j] == -1 and len(self.playerList) < int(number_of_players):  # start position of Pac-man
                     if player_counter == 0:
-                        movie = QMovie('Player1.gif', QByteArray(), self)
+                        self.moviePlayer = QMovie('Player1.gif', QByteArray(), self)
                     elif player_counter == 1:
-                        movie = QMovie('Player2.gif', QByteArray(), self)
+                        self.moviePlayer = QMovie('Player2.gif', QByteArray(), self)
                     elif player_counter == 2:
-                        movie = QMovie('Player3.gif', QByteArray(), self)
+                        self.moviePlayer = QMovie('Player3.gif', QByteArray(), self)
                     elif player_counter == 3:
-                        movie = QMovie('Player4.gif', QByteArray(), self)
+                        self.moviePlayer = QMovie('Player4.gif', QByteArray(), self)
 
                     player_counter += 1
 
-                    movie.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                              int(mapFrame.width() / len(self.map.map_matrix))))
-                    movie.setSpeed(100)
-                    label.setMovie(movie)
+                    self.moviePlayer.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                         int(mapFrame.width() / len(self.map.map_matrix))))
+                    self.moviePlayer.setSpeed(100)
+                    label.setMovie(self.moviePlayer)
                     label.setAttribute(Qt.WA_NoSystemBackground)
-                    movie.start()
+                    self.moviePlayer.start()
 
                     graphScene.setBackgroundBrush(Qt.black)
                     graphScene.addWidget(label)
@@ -388,19 +378,17 @@ class MainWindow(QWidget):
                     for player in range(int(number_of_players)):
                         self.playerRotationList.append(0)
 
-                    self.map.map_matrix[i][j] = len(self.playerList) + 2 # Setting players on the map
-
+                    self.map.map_matrix[i][j] = len(self.playerList) + 2    # Setting players on the map
                     mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
 
-                elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # pocetna pozicija neprijatelja
+                elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # start position of enemy
 
-                    pixmap = QPixmap('skull_enemy.png')
                     enemyCounter += 1
-                    scaled_pixmap = pixmap.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
-                    label.setPixmap(scaled_pixmap)
+                    scalePix = self.pix1.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
+                                                int(mapFrame.height() / len(self.map.map_matrix)))
+                    label.setPixmap(scalePix)
 
-                    self.map.map_matrix[i][j] = 7 # Setting enemies on the map
+                    self.map.map_matrix[i][j] = 7   # Setting enemies on the map
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.setLayout(layout)
@@ -409,22 +397,22 @@ class MainWindow(QWidget):
         if self.key_notifier is not None:
             for i in range(len(self.playerList)):
                 # The player cannot input multiple directions of movement, so we just return out of this method.
-                if self.contains_at_least_one([event.key()], self.player_keys[i]) and self.contains_at_least_one(
+                if contains_at_least_one([event.key()], self.player_keys[i]) and contains_at_least_one(
                         self.key_notifier.get_keys(), self.player_keys[i]):
-
                     return
+
             self.key_notifier.add_key(event.key())
 
     def keyReleaseEvent(self, event):
         # Check to see if it's in the list of active keys so the program doesn't break if it's not.
-        if self.key_notifier is not None and self.contains_at_least_one([event.key()], self.key_notifier.get_keys()):
+        if self.key_notifier is not None and contains_at_least_one([event.key()], self.key_notifier.get_keys()):
             self.key_notifier.rem_key(event.key())
 
     def __update_position__(self):
 
         pressed_keys = self.key_notifier.get_keys()
         for i in range(len(self.playerList)):
-            pressed_key = self.contains_at_least_one(pressed_keys, self.player_keys[i])
+            pressed_key = contains_at_least_one(pressed_keys, self.player_keys[i])
             if pressed_key:
 
                 rect = self.playerList[i].geometry()
@@ -464,14 +452,6 @@ class MainWindow(QWidget):
         if self.key_notifier is not None:
             self.key_notifier.die()
 
-    def contains_at_least_one(self, currentKeys, allCommand):
-        for i in range(len(currentKeys)):
-            for j in range(len(allCommand)):
-                if currentKeys[i] == allCommand[j]:
-                    return currentKeys[i]
-
-        return False
-
     def check_collision(self, player_label, x_movement, y_movement):
         for i in range(len(self.map_wall_labels)):
             rect = player_label.geometry()
@@ -482,7 +462,7 @@ class MainWindow(QWidget):
         return False
 
     def collect_points(self, player_label, index):
-        lock = Lock()
+        # lock = Lock()
         rect = player_label.geometry()
         for j in range(len(self.map_point_labels)):
             point_rect = copy.copy(self.map_point_labels[j].geometry())
@@ -498,7 +478,7 @@ class MainWindow(QWidget):
                     item = self.tableWidget.item(row, 0)
                     itemText = item.text()
 
-                    if itemText == self.players[index]:
+                    if itemText == self.playerNames[index]:
                         self.points.normalPointsIncrement(index)
                         if index == 0:
                             pointsItem = QTableWidgetItem(str(self.points.pointsPlayer1))
@@ -512,29 +492,6 @@ class MainWindow(QWidget):
                         pointsItem.setTextAlignment(Qt.AlignCenter)
                         pointsItem.setFlags(Qt.ItemIsEnabled)
                         self.tableWidget.setItem(row, 2, pointsItem)
-                '''rowCount = self.tableWidget.rowCount()
-
-                index = 0
-                for row in range(rowCount):
-                    item = self.tableWidget.item(row, 0)
-                    itemText = item.text()
-
-                    keyList = list(self.playersAndPoints.keys())
-                    valueList = list(self.playersAndPoints.values())
-
-                    if str(itemText) == keyList[index]:
-
-                        lock.acquire()
-                        newPoints = valueList[index] + 10
-                        self.playersAndPoints[index] = str(newPoints)
-
-                        pointsItem = QTableWidgetItem(str(newPoints))
-                        pointsItem.setTextAlignment(Qt.AlignCenter)
-                        pointsItem.setFlags(Qt.ItemIsEnabled)
-                        self.tableWidget.setItem(row, 2, pointsItem)
-
-                        lock.release()
-                    index += 1'''
                 break
         player_label.setGeometry(rect)
 
