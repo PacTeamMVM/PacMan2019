@@ -42,13 +42,13 @@ class Enemy:
     def move(self):
 
         if self.direction == 1:
-            self.x -= 1
+            self.x -= 5
         elif self.direction == 2:
-            self.x += 1
+            self.x += 5
         elif self.direction == 3:
-            self.y -= 1
+            self.y -= 5
         elif self.direction == 4:
-            self.x += 1
+            self.x += 5
 
         self.direction_changer -= 1
 

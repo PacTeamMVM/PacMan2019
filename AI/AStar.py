@@ -1,5 +1,3 @@
-import os
-import sys
 import numpy as np
 
 
@@ -88,9 +86,9 @@ def search(maze, cost, start, end):
         1) We first get the current node by comparing all f cost and selecting the lowest cost node for further expansion
         2) Check max iteration reached or not . Set a message and stop execution
         3) Remove the selected node from yet_to_visit list and add this node to visited list
-        4) Perofmr Goal test and return the path else perform below steps
+        4) Performer Goal test and return the path else perform below steps
         5) For selected node find out all children (use move to find children)
-            a) get the current postion for the selected node (this becomes parent node for the children)
+            a) get the current position for the selected node (this becomes parent node for the children)
             b) check if a valid position exist (boundary will make few nodes invalid)
             c) if any node is a wall then ignore that
             d) add to valid children node list for the selected parent
@@ -167,7 +165,7 @@ def search(maze, cost, start, end):
 
             # Create the f, g, and h values
             child.g = current_node.g + cost
-            ## Heuristic costs calculated here, this is using eucledian distance
+            # Heuristic costs calculated here, this is using euclidean distance
             child.h = (((child.position[0] - end_node.position[0]) ** 2) +
                        ((child.position[1] - end_node.position[1]) ** 2))
 
@@ -195,14 +193,15 @@ def convert_map_for_algorhitm(map):
     #  5 - player 3
     #  6 - player 4
     #  7 - enemy
-    for i in len(map):
-        for j in len(map[i]):
+    for i in range(len(map)):                           #dodao sam dva range-a
+        for j in range(len(map[i])):
             if map[i][j] != -3 and map[i][j] != -4:
                 map[i][j] = 0
             else:
                 map[i][j] = 1
 
     return map
+
 
 # MAIN FUNCTION 1
 def search_pacman(map, start, end):

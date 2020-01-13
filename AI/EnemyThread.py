@@ -8,6 +8,7 @@ class EnemyThread(QObject):
     def __init__(self, parent=None):
         super(EnemyThread, self).__init__(parent)
 
+        self.enemySpeed = 0.075                                 # speed of enemies moving
         self.enemies = []                                       # list of enemies
         self.isEnemyDie = False
         self.thread = QThread()
@@ -31,8 +32,22 @@ class EnemyThread(QObject):
     def get_enemies(self):
         return self.enemies
 
+    def changeEnemySpeed(self, numberLevel):        # high level -> high speed
+        if numberLevel <= 1:
+            self.enemySpeed = 0.075
+        elif numberLevel == 2:
+            self.enemySpeed = 0.065
+        elif numberLevel == 3:
+            self.enemySpeed = 0.06
+        elif numberLevel == 4:
+            self.enemySpeed = 0.055
+        elif numberLevel == 5:
+            self.enemySpeed = 0.05
+        else:
+            self.enemySpeed = 0.04
+
     @pyqtSlot()
     def __enemyRun__(self):
         while not self.isEnemyDie:
             self.enemy_signal.emit("Enemy")
-            time.sleep(0.05)
+            time.sleep(self.enemySpeed)

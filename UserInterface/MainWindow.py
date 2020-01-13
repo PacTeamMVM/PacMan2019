@@ -1,5 +1,6 @@
 import copy
 import os
+import random
 import sys
 import winsound
 
@@ -296,14 +297,14 @@ class MainWindow(QWidget):
             self.tableWidget.setItem(i, 2, pointsItem)
             self.tableWidget.setFocusPolicy(Qt.NoFocus)
 
-            # set point counters on zero
-            self.points.pointsPlayer1 = 0
-            self.points.pointsPlayer2 = 0
-            self.points.pointsPlayer3 = 0
-            self.points.pointsPlayer4 = 0
+        # set point counters on zero
+        self.points.pointsPlayer1 = 0
+        self.points.pointsPlayer2 = 0
+        self.points.pointsPlayer3 = 0
+        self.points.pointsPlayer4 = 0
 
-            #list of all players which play current game
-            self.playerNames = player_names
+        #list of all players which play current game
+        self.playerNames = player_names
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
@@ -510,13 +511,82 @@ class MainWindow(QWidget):
 
     def methodMovingEnemy(self):
         enemies = self.enemyThread.get_enemies()
+
+        if len(enemies) == 0:
+            pass                                                                # svi neprijatelji su unisteni
+
+        # treba mi lista igraca
+        players = self.playerList                                               # igrac ce moci i da nastrada
+
+        numberOfEnemyOnOnePlayer = len(enemies) // len(self.playerList)          # koliko ce kojih duhova vijate pacmane
+        rest = len(enemies) % len(self.playerList)                               # ostatak duhova se se random kretati
+
         for i in range(len(enemies)):
-            rect = self.enemiesList[i].geometry()
-            self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+
+            # 1-left
+            # 2-up
+            # 3-down
+            # 4-right
+
+            initRandom = random.randint(1, 4)
+
+            if not self.check_collision(self.enemiesList[i], -5, 0):
+                self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+            '''rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
+            rect = self.enemiesList[i].frameGeometry()
+            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())'''
+            '''if i+1 <= len(self.playerList) * numberOfEnemyOnOnePlayer:
+                # i-ti duh ce vijati odredjenog pacman-a
+                rect = self.enemiesList[i].frameGeometry()
+                #print("X: {}".format(rect.x()))
+                #print("Y: {}".format(rect.y()))
+                #print("-------------")
+
+                pravac = "left"
+                if not self.check_collision(self.enemiesList[i], -5, 0):
+                    self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+                elif not self.check_collision(self.enemiesList[i], 5, 0):
+                    self.enemiesList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
+                elif not self.check_collision(self.enemiesList[i], 0, -5):
+                    self.enemiesList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height())
+                else:
+                    self.enemiesList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
+
+            else:
+                # duh na i-tom index-u ce se kretati random kroz lavirint
+                rect = self.enemiesList[i].geometry()
+
+                randomNumber = random.randint(1, 4)     # 1-up, 2-left, 3-right, 4-down
+                if randomNumber == 1:
+                    self.enemiesList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
+                elif randomNumber == 2:
+                    self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+                elif randomNumber == 3:
+                    self.enemiesList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
+                else:
+                    self.enemiesList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height()'''
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
         self.initWindow(layout)
+
+    #test
+    def mouseMoveEvent(self, e):                                        #metoda koja se automatski poziva kada detektuje da pomeram misa
+            x = e.x()
+            y = e.y()
+
+            text = "x: {0},  y: {1}".format(x, y)
+            self.setWindowTitle(text)
 
 
 if __name__ == '__main__':
