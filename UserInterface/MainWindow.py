@@ -2,7 +2,6 @@ import copy
 import os
 import sys
 import winsound
-# from threading import Lock
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
@@ -10,9 +9,10 @@ from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushBut
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
     QDesktopWidget
 
+from AI.EnemyThread import EnemyThread
+from Map.Map import Map
 from Map.Points import Points
 from Map.key_notifier import KeyNotifier
-from Map.Map import Map
 
 
 def cleanGrid(layout):
@@ -55,7 +55,10 @@ class MainWindow(QWidget):
         self.bigPointPix = QPixmap('big_point.png')
         self.label1 = QLabel(self)
         self.label2 = QLabel(self)
+
         self.key_notifier = None
+        self.enemyThread = None
+
         self.movie = None
         self.moviePlayer = None
         self.playerNames = None
@@ -240,9 +243,17 @@ class MainWindow(QWidget):
 
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
         self.setWindowState(Qt.WindowMaximized)
+
         self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
         self.key_notifier.start()
+
+        self.enemyThread = EnemyThread()
+        for enemy in self.enemiesList:
+            self.enemyThread.add_enemy(enemy)
+
+        self.enemyThread.enemy_signal.connect(self.methodMovingEnemy)
+        self.enemyThread.enemyStart()
 
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
         tableFrame = QFrame()
@@ -298,7 +309,7 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 1, 0)
-        buttonBack.clicked.connect(lambda: self.initWindow(layout))
+        buttonBack.clicked.connect(lambda: self.backWindow(layout))
 
         self.map = Map()
         self.map_grid = mapGrid
@@ -334,8 +345,10 @@ class MainWindow(QWidget):
 
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
-        self.playerList = []
-        self.playerRotationList = []
+        self.playerList = []                # list of players
+        self.playerRotationList = []        # list of players rotation
+        self.enemiesList = []               # list od enemies
+
         enemyCounter = 1
 
         player_counter = 0
@@ -388,7 +401,8 @@ class MainWindow(QWidget):
                                                 int(mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scalePix)
 
-                    self.map.map_matrix[i][j] = 7   # Setting enemies on the map
+                    self.map.map_matrix[i][j] = 7                       # Setting enemies on the map
+                    self.enemiesList.append(label)                      # put enemy in list of enemies
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
 
         self.setLayout(layout)
@@ -409,7 +423,6 @@ class MainWindow(QWidget):
             self.key_notifier.rem_key(event.key())
 
     def __update_position__(self):
-
         pressed_keys = self.key_notifier.get_keys()
         for i in range(len(self.playerList)):
             pressed_key = contains_at_least_one(pressed_keys, self.player_keys[i])
@@ -494,6 +507,16 @@ class MainWindow(QWidget):
                         self.tableWidget.setItem(row, 2, pointsItem)
                 break
         player_label.setGeometry(rect)
+
+    def methodMovingEnemy(self):
+        enemies = self.enemyThread.get_enemies()
+        for i in range(len(enemies)):
+            rect = self.enemiesList[i].geometry()
+            self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
+
+    def backWindow(self, layout):
+        self.enemyThread.enemyDie()
+        self.initWindow(layout)
 
 
 if __name__ == '__main__':

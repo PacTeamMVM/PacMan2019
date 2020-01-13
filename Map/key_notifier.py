@@ -53,5 +53,3 @@ class KeyNotifier(QObject):
                 self.key_signal.emit(k)
                 break
             time.sleep(0.05)
-
-
