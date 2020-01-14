@@ -42,6 +42,68 @@ def contains_at_least_one(currentKeys, allCommand):
     return False
 
 
+def drawMethod(layout, number_of_players, players_names):
+    #cleanGrid(layout)
+    players = []
+    for i in range(int(number_of_players)):
+        players.append(players_names[i])
+
+    random.shuffle(players)
+
+    semi_final_1 = []
+    semi_final_2 = []
+
+    if int(number_of_players) == 4:
+        for i in range(len(players)):
+            if i < 2:
+                semi_final_1.append(players[i])
+            else:
+                semi_final_2.append(players[i])
+
+    elif int(number_of_players) == 5 or int(number_of_players) == 6:
+        for i in range(len(players)):
+            if i < 3:
+                semi_final_1.append(players[i])
+            else:
+                semi_final_2.append(players[i])
+
+    elif int(number_of_players) == 7 or int(number_of_players) == 8:
+        for i in range(len(players)):
+            if i < 4:
+                semi_final_1.append(players[i])
+            else:
+                semi_final_2.append(players[i])
+
+    print(players)
+    print(semi_final_1)
+    print(semi_final_2)
+    labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+
+    labelSemiFinal1 = QLabel()
+    sf1 = ""
+    for semi in semi_final_1:
+        if semi_final_1[-1] != semi:
+            sf1 += semi + " vs "
+        else:
+            sf1 += semi
+    labelSemiFinal1.setText("First semi final: " + sf1)
+    labelSemiFinal1.setStyleSheet(labelStyle)
+    layout.addWidget(labelSemiFinal1, 9, 0)
+
+    labelSemiFinal2 = QLabel()
+    sf2 = ""
+    for semi in semi_final_2:
+        if semi_final_2[-1] != semi:
+            sf2 += semi + " vs "
+        else:
+            sf2 += semi
+    labelSemiFinal2.setText("Second semi final: " + sf2)
+    labelSemiFinal2.setStyleSheet(labelStyle)
+    layout.addWidget(labelSemiFinal2, 10, 0)
+
+    #upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za SM3
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -74,6 +136,8 @@ class MainWindow(QWidget):
         # object for players points
         self.points = Points()
 
+        self.tournament = None
+
         self.show()
         winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
 
@@ -99,14 +163,19 @@ class MainWindow(QWidget):
         layout.addWidget(buttonNewGame, 1, 0)
         buttonNewGame.clicked.connect(lambda: self.newGameWindow(layout))
 
+        buttonTournament = QPushButton("TOURNAMENT", self)
+        buttonTournament.setStyleSheet(buttonStyle)
+        layout.addWidget(buttonTournament, 2, 0)
+        buttonTournament.clicked.connect(lambda: self.tournamentWindow(layout))
+
         buttonAbout = QPushButton("ABOUT", self)
         buttonAbout.setStyleSheet(buttonStyle)
-        layout.addWidget(buttonAbout, 2, 0)
+        layout.addWidget(buttonAbout, 3, 0)
         buttonAbout.clicked.connect(lambda: self.aboutWindow(layout))
 
         buttonQuit = QPushButton("QUIT", self)
         buttonQuit.setStyleSheet(buttonStyle)
-        layout.addWidget(buttonQuit, 3, 0)
+        layout.addWidget(buttonQuit, 4, 0)
         buttonQuit.clicked.connect(QApplication.instance().quit)
 
         checkBox = QCheckBox(self)
@@ -115,7 +184,7 @@ class MainWindow(QWidget):
         checkBoxStyle = 'QCheckBox {background-color: transparent; color: red; font: 10pt, Consoles; font-size:15px; ' \
                         'height:48px; width: 120px} '
         checkBox.setStyleSheet(checkBoxStyle)
-        layout.addWidget(checkBox, 4, 0)
+        layout.addWidget(checkBox, 5, 0)
         checkBox.stateChanged.connect(lambda: clickBox(checkBox.checkState()))
 
         self.setLayout(layout)
@@ -130,6 +199,78 @@ class MainWindow(QWidget):
         movie_screen.setMovie(self.movie)
         layout.addWidget(movie_screen, 0, 0)
         self.movie.start()
+
+    def tournamentWindow(self, layout):
+        cleanGrid(layout)
+        labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+        comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+        textBoxStyle = 'QLineEdit {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+
+        labelTournamentPlayers = QLabel()
+        labelTournamentPlayers.setText("Number od players on tournament")
+        labelTournamentPlayers.setStyleSheet(labelStyle)
+        layout.addWidget(labelTournamentPlayers, 0, 0)
+
+        comboBoxTournamentPlayer = QComboBox()
+        comboBoxTournamentPlayer.setStyleSheet(comboBoxStyle)
+        comboBoxTournamentPlayer.addItem("4")
+        comboBoxTournamentPlayer.addItem("5")
+        comboBoxTournamentPlayer.addItem("6")
+        comboBoxTournamentPlayer.addItem("7")
+        comboBoxTournamentPlayer.addItem("8")
+        layout.addWidget(comboBoxTournamentPlayer, 0, 2)
+
+        for i in range(8):
+            labelPlayer = QLabel()
+            labelPlayer.setText("Player" + str(i+1))
+            labelPlayer.setStyleSheet(labelStyle)
+            layout.addWidget(labelPlayer, i+1, 0)
+
+        textBox1 = QLineEdit()
+        textBox1.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox1, 1, 2)
+        textBox2 = QLineEdit()
+        textBox2.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox2, 2, 2)
+        textBox3 = QLineEdit()
+        textBox3.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox3, 3, 2)
+        textBox4 = QLineEdit()
+        textBox4.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox4, 4, 2)
+        textBox5 = QLineEdit()
+        textBox5.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox5, 5, 2)
+        textBox6 = QLineEdit()
+        textBox6.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox6, 6, 2)
+        textBox7 = QLineEdit()
+        textBox7.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox7, 7, 2)
+        textBox8 = QLineEdit()
+        textBox8.setStyleSheet(textBoxStyle)
+        layout.addWidget(textBox8, 8, 2)
+
+        buttonBack = QPushButton("BACK", self)
+        buttonBack.setStyleSheet(
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+        layout.addWidget(buttonBack, 11, 0)
+        buttonBack.clicked.connect(lambda: self.initWindow(layout))
+
+        buttonBack = QPushButton("DRAW", self)
+        buttonBack.setStyleSheet(
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+        layout.addWidget(buttonBack, 11, 1)
+        buttonBack.clicked.connect(lambda: drawMethod(layout, comboBoxTournamentPlayer.currentText(),
+                                                      [textBox1.text(), textBox2.text(), textBox3.text(),
+                                                      textBox4.text(), textBox5.text(), textBox6.text(),
+                                                      textBox7.text(), textBox8.text()]))
+
+        buttonBack = QPushButton("PLAY TOURNAMENT", self)
+        buttonBack.setStyleSheet(
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+        layout.addWidget(buttonBack, 11, 2)
+        # buttonBack.clicked.connect(lambda: mazeTournament(...)
 
     def aboutWindow(self, layout):
         cleanGrid(layout)
@@ -173,6 +314,7 @@ class MainWindow(QWidget):
         comboBoxPlayer.setStyleSheet(comboBoxStyle)
         comboBoxPlayer.addItem("1")
         comboBoxPlayer.addItem("2")
+        comboBoxPlayer.addItem("3")
         comboBoxPlayer.addItem("4")
         layout.addWidget(comboBoxPlayer, 0, 2)
 
@@ -429,7 +571,10 @@ class MainWindow(QWidget):
             pressed_key = contains_at_least_one(pressed_keys, self.player_keys[i])
             if pressed_key:
 
-                rect = self.playerList[i].geometry()
+                rect = self.playerList[i].frameGeometry()
+                print(rect.x())
+                print(rect.y())
+                print("---------------")
 
                 # Do the check for the player
                 if pressed_key == self.player_keys[i][0]:
