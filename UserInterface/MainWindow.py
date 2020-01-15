@@ -613,6 +613,7 @@ class MainWindow(QWidget):
                         self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
 
                 self.collect_points(self.playerList[i], i)
+                self.check_teleport(self.playerList[i])
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
@@ -626,6 +627,13 @@ class MainWindow(QWidget):
             if self.map_wall_labels[i].geometry().intersects(rect):
                 return True
         return False
+
+    def check_teleport(self, player_label):
+        rect = player_label.geometry()
+        if rect.x() < self.map_wall_labels[0].x() - player_label.width():
+            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7), rect.y(), rect.width(), rect.height())
+        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width():
+            player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(), rect.height())
 
     def collect_points(self, player_label, index):
         # lock = Lock()
@@ -684,30 +692,6 @@ class MainWindow(QWidget):
             available_directions_y.append(3)
         if not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() * 2):
             available_directions_y.append(4)
-        '''
-        for j in range(len(enemy.coordinateForEnemies)):
-            if rectEnemy.contains(QPoint(enemy.coordinateForEnemies[j][0], enemy.coordinateForEnemies[j][1]), True):
-                if enemy_values[i].direction_counter <= 0:
-                    enemy_values[i].direction = random.randint(1, 4)
-                    enemy_values[i].direction_counter = 5
-                    break
-                else:
-                    isTimeToDirection = False
-                    if direction == 1 and not self.check_collision(self.enemiesList[i], -4, 0):
-                        self.enemiesList[i].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
-                                                        rectEnemy.height())
-                    if direction == 2 and not self.check_collision(self.enemiesList[i], self.enemiesList[i].width() + 4, 0):
-                        self.enemiesList[i].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
-                                                        rectEnemy.height())
-                    if direction == 3 and not self.check_collision(self.enemiesList[i], 0, -6.1):
-                        self.enemiesList[i].setGeometry(rectEnemy.x(), rectEnemy.y() - 6.1, rectEnemy.width(),
-                                                        rectEnemy.height())
-                    if direction == 4 and not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() + 6.1):
-                        self.enemiesList[i].setGeometry(rectEnemy.x(), rectEnemy.y() + 6.1, rectEnemy.width(),
-                                                        rectEnemy.height())
-                    enemy_values[i].direction_counter -= 1
-            break
-        '''
 
         if enemy_values.direction_counter <= 0 and (len(available_directions_x) + len(available_directions_y)) >= 2 and len(available_directions_x) >= 1 and len(available_directions_y) >= 1:
 
