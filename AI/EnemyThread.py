@@ -5,14 +5,15 @@ from AI.EnemyValues import EnemyValues
 
 
 class EnemyThread(QObject):
-    enemy_signal = pyqtSignal(str)
+    enemy_signal = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super(EnemyThread, self).__init__(parent)
 
         self.enemySpeed = 0.075                                 # speed of enemies moving
-        self.enemies = []                                       # list of enemies
-        self.enemy_values = []
+        self.enemy = None                                       # list of enemies
+        self.enemy_values = None
+        self.index = -1
         self.isEnemyDie = False
         self.thread = QThread()
         self.moveToThread(self.thread)
@@ -23,19 +24,14 @@ class EnemyThread(QObject):
 
     def enemyDie(self):
         self.isEnemyDie = True
-        self.enemies.clear()
         self.thread.quit()
 
-    def add_enemy(self, enemy):                 # we need this method for eating enemies
-        self.enemies.append(enemy)
-        self.enemy_values.append(EnemyValues())
+    def assign_enemy(self, enemy):                 # we need this method for eating enemies
+        self.enemy = enemy
+        self.enemy_values = EnemyValues()
 
-    def rem_enemy(self, enemy):                 # we need this method for eating enemies
-        self.enemies.remove(enemy)
-        self.enemy_values.remove(self.enemy_values[len(self.enemy_values) - 1])
-
-    def get_enemies(self):
-        return self.enemies
+    def get_enemy(self):
+        return self.enemy
 
     def get_enemy_values(self):
         return self.enemy_values
@@ -57,5 +53,5 @@ class EnemyThread(QObject):
     @pyqtSlot()
     def __enemyRun__(self):
         while not self.isEnemyDie:
-            self.enemy_signal.emit("Enemy")
+            self.enemy_signal.emit(self.index)
             time.sleep(0.005)
