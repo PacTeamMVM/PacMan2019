@@ -5,6 +5,7 @@ class Enemy:
         self.coordinateMethod(firstX=422, firstY=347, stepX=32, stepY=30.5)
 
     def coordinateMethod(self, firstX, firstY, stepX, stepY):
+        self.coordinateForEnemies = []
         #first
         self.coordinateForEnemies.append((firstX - (stepX*12), firstY - (stepY*10)))
         self.coordinateForEnemies.append((firstX - (stepX*7), firstY - (stepY*10)))

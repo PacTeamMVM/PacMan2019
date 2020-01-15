@@ -5,7 +5,7 @@ import sys
 import time
 import winsound
 
-from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
+from PyQt5.QtCore import QByteArray, Qt, QSize, QRect, QPoint
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
@@ -406,7 +406,7 @@ class MainWindow(QWidget):
         tableFrame = QFrame()
         self.mapFrame = QFrame()
 
-        self.mapFrame.setFixedSize(900, 900)
+        self.mapFrame.setFixedSize(700, 700)
 
         self.mapFrame.setFrameShape(QFrame.NoFrame)
         self.mapFrame.setLineWidth(0)
@@ -546,8 +546,10 @@ class MainWindow(QWidget):
                 elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # start position of enemy
 
                     enemyCounter += 1
-                    scalePix = self.pix1.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0]))-5,
-                                                int(self.mapFrame.height() / len(self.map.map_matrix))-5)
+                    scalePix = self.pix1.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0])),
+                                                int(self.mapFrame.height() / len(self.map.map_matrix)))
+                    label.setFixedSize(int(self.mapFrame.width() / len(self.map.map_matrix[0])),
+                                       int(self.mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scalePix)
 
                     self.map.map_matrix[i][j] = 7                       # Setting enemies on the map
@@ -660,6 +662,7 @@ class MainWindow(QWidget):
     def methodMovingEnemy(self):
         global isTimeToDirection
         enemies = self.enemyThread.get_enemies()
+        enemy_values = self.enemyThread.get_enemy_values()
 
         if len(enemies) == 0:
             pass                                                                # svi neprijatelji su unisteni
@@ -670,74 +673,74 @@ class MainWindow(QWidget):
         numberOfEnemyOnOnePlayer = len(enemies) // len(self.playerList)          # koliko ce kojih duhova vijate pacmane
         rest = len(enemies) % len(self.playerList)                               # ostatak duhova se se random kretati
 
-        #for i in range(len(enemies)):
-        rectEnemy = self.enemiesList[0].frameGeometry()
-        rectEnemy1 = self.enemiesList[1].frameGeometry()
-        rectEnemy2 = self.enemiesList[2].frameGeometry()
-        rectEnemy3 = self.enemiesList[3].frameGeometry()
-        rectEnemy4 = self.enemiesList[4].frameGeometry()
-        rectPlayer = self.playerList[0].frameGeometry()
-
-        print(rectPlayer.x())
-        print(rectPlayer.y())
-        print(rectEnemy.x())
-        print(rectEnemy.y())
-        print("-------------")
-        print(rectEnemy1.x())
-        print(rectEnemy1.y())
-        print("-------------")
-        print(rectEnemy2.x())
-        print(rectEnemy2.y())
-        print("-------------")
-        print(rectEnemy3.x())
-        print(rectEnemy3.y())
-        print("-------------")
-        print(rectEnemy4.x())
-        print(rectEnemy4.y())
-
-        print("====")
         enemy = Enemy()
-        print(enemy.coordinateForEnemies)
-        #time.sleep(2)
-        direction = 0
-        #direction = random.randint(1, 4)
-        #po 4 na x osu----po 6.1 po y osi
-        #self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(), rectEnemy.height())
+        enemy.coordinateMethod(enemies[0].x(), enemies[0].y(), int(self.mapFrame.width() / len(self.map.map_matrix[0]))-5, int(self.mapFrame.width() / len(self.map.map_matrix))-5)
 
-        #time.sleep(1)
-        isTimeToDirection = True
-        for i in enemy.coordinateForEnemies:
-            if i[0] == float(rectEnemy.x()) and i[1] == float(rectEnemy.y()) and not isTimeToDirection:
-                direction = random.randint(1, 4)
-                isTimeToDirection = False
-                if direction == 1 and not self.check_collision(self.enemiesList[0], -4, 0):
-                    self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
-                                                    rectEnemy.height())
-                if direction == 2 and not self.check_collision(self.enemiesList[0], self.enemiesList[0].width() + 4, 0):
-                    self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
-                                                    rectEnemy.height())
-                if direction == 3 and not self.check_collision(self.enemiesList[0], 0, -6.1):
-                    self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() - 6.1, rectEnemy.width(),
-                                                    rectEnemy.height())
-                if direction == 4 and not self.check_collision(self.enemiesList[0], 0, self.enemiesList[0].height() + 6.1):
-                    self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() + 6.1, rectEnemy.width(),
-                                                    rectEnemy.height())
+        random.seed(time.time())
+        for i in range(len(enemies)):
+
+            rectEnemy = self.enemiesList[i].frameGeometry()
+
+            direction = enemy_values[i].direction
+
+            isTimeToDirection = True
+            available_directions_x = []
+            available_directions_y = []
+            if not self.check_collision(self.enemiesList[i], -self.enemiesList[i].width(), 0):
+                available_directions_x.append(1)
+            if not self.check_collision(self.enemiesList[i], self.enemiesList[i].width() * 2, 0):
+                available_directions_x.append(2)
+            if not self.check_collision(self.enemiesList[i], 0, -self.enemiesList[i].height()):
+                available_directions_y.append(3)
+            if not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() * 2):
+                available_directions_y.append(4)
+            '''
+            for j in range(len(enemy.coordinateForEnemies)):
+                if rectEnemy.contains(QPoint(enemy.coordinateForEnemies[j][0], enemy.coordinateForEnemies[j][1]), True):
+                    if enemy_values[i].direction_counter <= 0:
+                        enemy_values[i].direction = random.randint(1, 4)
+                        enemy_values[i].direction_counter = 5
+                        break
+                    else:
+                        isTimeToDirection = False
+                        if direction == 1 and not self.check_collision(self.enemiesList[i], -4, 0):
+                            self.enemiesList[i].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
+                                                            rectEnemy.height())
+                        if direction == 2 and not self.check_collision(self.enemiesList[i], self.enemiesList[i].width() + 4, 0):
+                            self.enemiesList[i].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
+                                                            rectEnemy.height())
+                        if direction == 3 and not self.check_collision(self.enemiesList[i], 0, -6.1):
+                            self.enemiesList[i].setGeometry(rectEnemy.x(), rectEnemy.y() - 6.1, rectEnemy.width(),
+                                                            rectEnemy.height())
+                        if direction == 4 and not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() + 6.1):
+                            self.enemiesList[i].setGeometry(rectEnemy.x(), rectEnemy.y() + 6.1, rectEnemy.width(),
+                                                            rectEnemy.height())
+                        enemy_values[i].direction_counter -= 1
                 break
+            '''
 
-        if isTimeToDirection:
-            direction = random.randint(1, 4)
-            if direction == 1 and not self.check_collision(self.enemiesList[0], -4, 0):
-                self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
-                                                rectEnemy.height())
-            if direction == 2 and not self.check_collision(self.enemiesList[0], self.enemiesList[0].width() + 4, 0):
-                self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
-                                                rectEnemy.height())
-            if direction == 3 and not self.check_collision(self.enemiesList[0], 0, -6.1):
-                self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) - 6.1, rectEnemy.width(),
-                                                rectEnemy.height())
-            if direction == 4 and not self.check_collision(self.enemiesList[0], 0, self.enemiesList[0].height() + 6.1):
-                self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 6.1, rectEnemy.width(),
-                                                rectEnemy.height())
+            if enemy_values[i].direction_counter <= 0 and (len(available_directions_x) + len(available_directions_y)) >= 2 and len(available_directions_x) >= 1 and len(available_directions_y) >= 1:
+                temp = random.randint(1, len(available_directions_x) + len(available_directions_y))
+                enemy_values[i].direction_counter = 100
+                if temp > len(available_directions_x):
+                    enemy_values[i].direction = available_directions_y[temp - len(available_directions_x) - 1]
+                else:
+                    enemy_values[i].direction = available_directions_x[temp - 1]
+
+            if isTimeToDirection:
+                if direction == 1 and not self.check_collision(self.enemiesList[i], -1, 0):
+                    self.enemiesList[i].setGeometry(rectEnemy.x() - 1, rectEnemy.y(), rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 2 and not self.check_collision(self.enemiesList[i], self.enemiesList[i].width() + 1, 0):
+                    self.enemiesList[i].setGeometry(rectEnemy.x() + 1, rectEnemy.y(), rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 3 and not self.check_collision(self.enemiesList[i], 0, -1):
+                    self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) - 1, rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 4 and not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() + 1):
+                    self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 1, rectEnemy.width(),
+                                                    rectEnemy.height())
+                enemy_values[i].direction_counter -= 1
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
