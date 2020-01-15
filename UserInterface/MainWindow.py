@@ -710,32 +710,32 @@ class MainWindow(QWidget):
             if i[0] == float(rectEnemy.x()) and i[1] == float(rectEnemy.y()) and not isTimeToDirection:
                 direction = random.randint(1, 4)
                 isTimeToDirection = False
-                if direction == 1:
+                if direction == 1 and not self.check_collision(self.enemiesList[0], -4, 0):
                     self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
                                                     rectEnemy.height())
-                if direction == 2:
+                if direction == 2 and not self.check_collision(self.enemiesList[0], self.enemiesList[0].width() + 4, 0):
                     self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
                                                     rectEnemy.height())
-                if direction == 3:
+                if direction == 3 and not self.check_collision(self.enemiesList[0], 0, -6.1):
                     self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() - 6.1, rectEnemy.width(),
                                                     rectEnemy.height())
-                if direction == 4:
+                if direction == 4 and not self.check_collision(self.enemiesList[0], 0, self.enemiesList[0].height() + 6.1):
                     self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() + 6.1, rectEnemy.width(),
                                                     rectEnemy.height())
                 break
 
         if isTimeToDirection:
             direction = random.randint(1, 4)
-            if direction == 1:
+            if direction == 1 and not self.check_collision(self.enemiesList[0], -4, 0):
                 self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
                                                 rectEnemy.height())
-            if direction == 2:
+            if direction == 2 and not self.check_collision(self.enemiesList[0], self.enemiesList[0].width() + 4, 0):
                 self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
                                                 rectEnemy.height())
-            if direction == 3:
+            if direction == 3 and not self.check_collision(self.enemiesList[0], 0, -6.1):
                 self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) - 6.1, rectEnemy.width(),
                                                 rectEnemy.height())
-            if direction == 4:
+            if direction == 4 and not self.check_collision(self.enemiesList[0], 0, self.enemiesList[0].height() + 6.1):
                 self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 6.1, rectEnemy.width(),
                                                 rectEnemy.height())
 
