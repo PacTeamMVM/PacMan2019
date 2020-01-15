@@ -719,6 +719,7 @@ class MainWindow(QWidget):
                 self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 1, rectEnemy.width(),
                                                 rectEnemy.height())
             enemy_values.direction_counter -= 1
+            self.check_teleport(self.enemiesList[i])
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
