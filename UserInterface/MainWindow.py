@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushBut
     QDesktopWidget
 
 from AI.EnemyThread import EnemyThread
+from AI.proba import astar
 from Map.Map import Map
 from Map.Points import Points
 from Map.key_notifier import KeyNotifier
@@ -402,6 +403,8 @@ class MainWindow(QWidget):
         tableFrame = QFrame()
         mapFrame = QFrame()
 
+        mapFrame.setFixedSize(700, 700)
+
         mapFrame.setFrameShape(QFrame.NoFrame)
         mapFrame.setLineWidth(0)
         tableFrame.setFrameShape(QFrame.NoFrame)
@@ -479,8 +482,8 @@ class MainWindow(QWidget):
                     self.map_fence_labels.append(label)
 
                 elif self.map.map_matrix[i][j] == 1:  # points
-                    scaledPix = self.pointPix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                     int(mapFrame.height() / len(self.map.map_matrix)))
+                    scaledPix = self.pointPix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                     int(mapFrame.height() / len(self.map.map_matrix))-5)
                     label.setPixmap(scaledPix)
                     self.map_point_labels.append(label)
                     self.map_point_label_row.append(i)
@@ -515,8 +518,8 @@ class MainWindow(QWidget):
 
                     player_counter += 1
 
-                    self.moviePlayer.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                         int(mapFrame.width() / len(self.map.map_matrix))))
+                    self.moviePlayer.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                         int(mapFrame.width() / len(self.map.map_matrix))-5))
                     self.moviePlayer.setSpeed(100)
                     label.setMovie(self.moviePlayer)
                     label.setAttribute(Qt.WA_NoSystemBackground)
@@ -540,8 +543,8 @@ class MainWindow(QWidget):
                 elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # start position of enemy
 
                     enemyCounter += 1
-                    scalePix = self.pix1.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                int(mapFrame.height() / len(self.map.map_matrix)))
+                    scalePix = self.pix1.scaled(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                int(mapFrame.height() / len(self.map.map_matrix))-5)
                     label.setPixmap(scalePix)
 
                     self.map.map_matrix[i][j] = 7                       # Setting enemies on the map
@@ -666,60 +669,21 @@ class MainWindow(QWidget):
         numberOfEnemyOnOnePlayer = len(enemies) // len(self.playerList)          # koliko ce kojih duhova vijate pacmane
         rest = len(enemies) % len(self.playerList)                               # ostatak duhova se se random kretati
 
-        for i in range(len(enemies)):
-            rect = self.enemiesList[i].frameGeometry()
+        #for i in range(len(enemies)):
+        rectEnemy = self.enemiesList[0].frameGeometry()
+        rectPlayer = self.playerList[0].frameGeometry()
 
-            # 1-left
-            # 2-up
-            # 3-down
-            # 4-right
+        #star = Node()
+        #path = astar(self.map.map_matrix, (rectEnemy.x(), rectEnemy.y()), (rectPlayer.x(), rectPlayer.y()))
+        #[newX, newY] = search_pacman_return_next_step_coordinate(self.map.map_matrix, [rectEnemy.x(), rectEnemy.y()],
+                                                                 #[rectPlayer.x(), rectPlayer.y()])
 
-            initRandom = random.randint(1, 4)
-
-            if not self.check_collision(self.enemiesList[i], -5, 0):
-                self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
-            '''rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
-            rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
-            rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
-            rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
-            rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())
-            rect = self.enemiesList[i].frameGeometry()
-            self.enemiesList[i].setGeometry(rect.x() - 1, rect.y(), rect.width(), rect.height())'''
-            '''if i+1 <= len(self.playerList) * numberOfEnemyOnOnePlayer:
-                # i-ti duh ce vijati odredjenog pacman-a
-                rect = self.enemiesList[i].frameGeometry()
-                #print("X: {}".format(rect.x()))
-                #print("Y: {}".format(rect.y()))
-                #print("-------------")
-
-                pravac = "left"
-                if not self.check_collision(self.enemiesList[i], -5, 0):
-                    self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
-                elif not self.check_collision(self.enemiesList[i], 5, 0):
-                    self.enemiesList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
-                elif not self.check_collision(self.enemiesList[i], 0, -5):
-                    self.enemiesList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height())
-                else:
-                    self.enemiesList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
-
-            else:
-                # duh na i-tom index-u ce se kretati random kroz lavirint
-                rect = self.enemiesList[i].geometry()
-
-                randomNumber = random.randint(1, 4)     # 1-up, 2-left, 3-right, 4-down
-                if randomNumber == 1:
-                    self.enemiesList[i].setGeometry(rect.x(), rect.y() + 5, rect.width(), rect.height())
-                elif randomNumber == 2:
-                    self.enemiesList[i].setGeometry(rect.x() - 5, rect.y(), rect.width(), rect.height())
-                elif randomNumber == 3:
-                    self.enemiesList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
-                else:
-                    self.enemiesList[i].setGeometry(rect.x(), rect.y() - 5, rect.width(), rect.height()'''
+        #print(path)
+        #print(newY)
+        # 1-left
+        # 2-up
+        # 3-down
+        # 4-right
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
@@ -727,11 +691,11 @@ class MainWindow(QWidget):
 
     #test
     def mouseMoveEvent(self, e):                                        #metoda koja se automatski poziva kada detektuje da pomeram misa
-            x = e.x()
-            y = e.y()
+        x = e.x()
+        y = e.y()
 
-            text = "x: {0},  y: {1}".format(x, y)
-            self.setWindowTitle(text)
+        text = "x: {0},  y: {1}".format(x, y)
+        self.setWindowTitle(text)
 
 
 if __name__ == '__main__':
