@@ -2,6 +2,7 @@ import copy
 import os
 import random
 import sys
+import time
 import winsound
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QRect
@@ -10,11 +11,13 @@ from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushBut
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
     QDesktopWidget
 
+from AI.Enemy import Enemy
 from AI.EnemyThread import EnemyThread
-from AI.proba import astar
 from Map.Map import Map
 from Map.Points import Points
 from Map.key_notifier import KeyNotifier
+
+isTimeToDirection = True
 
 
 def cleanGrid(layout):
@@ -401,12 +404,12 @@ class MainWindow(QWidget):
 
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
         tableFrame = QFrame()
-        mapFrame = QFrame()
+        self.mapFrame = QFrame()
 
-        mapFrame.setFixedSize(700, 700)
+        self.mapFrame.setFixedSize(900, 900)
 
-        mapFrame.setFrameShape(QFrame.NoFrame)
-        mapFrame.setLineWidth(0)
+        self.mapFrame.setFrameShape(QFrame.NoFrame)
+        self.mapFrame.setLineWidth(0)
         tableFrame.setFrameShape(QFrame.NoFrame)
         tableFrame.setLineWidth(0)
 
@@ -414,9 +417,9 @@ class MainWindow(QWidget):
         mapGrid = QGridLayout()
 
         tableFrame.setLayout(tableGrid)
-        mapFrame.setLayout(mapGrid)
-        layout.addWidget(tableFrame, 0, 0)
-        layout.addWidget(mapFrame, 0, 1)
+        self.mapFrame.setLayout(mapGrid)
+        layout.addWidget(self.mapFrame, 0, 0)
+        layout.addWidget(tableFrame, 0, 1)
 
         tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; ' \
                      'width: 120px; }'
@@ -470,20 +473,20 @@ class MainWindow(QWidget):
             for j in range(len(self.map.map_matrix[0])):
                 label = QLabel()
                 if self.map.map_matrix[i][j] == -3:  # block
-                    scaledPix = self.block.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                  int(mapFrame.height() / len(self.map.map_matrix)))
+                    scaledPix = self.block.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0])),
+                                                  int(self.mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaledPix)
                     self.map_wall_labels.append(label)
 
                 elif self.map.map_matrix[i][j] == -4:  # gate
-                    scaledPix = self.gatePix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0])),
-                                                    int(mapFrame.height() / len(self.map.map_matrix)))
+                    scaledPix = self.gatePix.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0])),
+                                                    int(self.mapFrame.height() / len(self.map.map_matrix)))
                     label.setPixmap(scaledPix)
                     self.map_fence_labels.append(label)
 
                 elif self.map.map_matrix[i][j] == 1:  # points
-                    scaledPix = self.pointPix.scaled(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
-                                                     int(mapFrame.height() / len(self.map.map_matrix))-5)
+                    scaledPix = self.pointPix.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                     int(self.mapFrame.height() / len(self.map.map_matrix))-5)
                     label.setPixmap(scaledPix)
                     self.map_point_labels.append(label)
                     self.map_point_label_row.append(i)
@@ -518,8 +521,8 @@ class MainWindow(QWidget):
 
                     player_counter += 1
 
-                    self.moviePlayer.setScaledSize(QSize(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
-                                                         int(mapFrame.width() / len(self.map.map_matrix))-5))
+                    self.moviePlayer.setScaledSize(QSize(int(self.mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                         int(self.mapFrame.width() / len(self.map.map_matrix))-5))
                     self.moviePlayer.setSpeed(100)
                     label.setMovie(self.moviePlayer)
                     label.setAttribute(Qt.WA_NoSystemBackground)
@@ -543,8 +546,8 @@ class MainWindow(QWidget):
                 elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # start position of enemy
 
                     enemyCounter += 1
-                    scalePix = self.pix1.scaled(int(mapFrame.width() / len(self.map.map_matrix[0]))-5,
-                                                int(mapFrame.height() / len(self.map.map_matrix))-5)
+                    scalePix = self.pix1.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0]))-5,
+                                                int(self.mapFrame.height() / len(self.map.map_matrix))-5)
                     label.setPixmap(scalePix)
 
                     self.map.map_matrix[i][j] = 7                       # Setting enemies on the map
@@ -575,9 +578,6 @@ class MainWindow(QWidget):
             if pressed_key:
 
                 rect = self.playerList[i].frameGeometry()
-                print(rect.x())
-                print(rect.y())
-                print("---------------")
 
                 # Do the check for the player
                 if pressed_key == self.player_keys[i][0]:
@@ -658,6 +658,7 @@ class MainWindow(QWidget):
         player_label.setGeometry(rect)
 
     def methodMovingEnemy(self):
+        global isTimeToDirection
         enemies = self.enemyThread.get_enemies()
 
         if len(enemies) == 0:
@@ -671,19 +672,72 @@ class MainWindow(QWidget):
 
         #for i in range(len(enemies)):
         rectEnemy = self.enemiesList[0].frameGeometry()
+        rectEnemy1 = self.enemiesList[1].frameGeometry()
+        rectEnemy2 = self.enemiesList[2].frameGeometry()
+        rectEnemy3 = self.enemiesList[3].frameGeometry()
+        rectEnemy4 = self.enemiesList[4].frameGeometry()
         rectPlayer = self.playerList[0].frameGeometry()
 
-        #star = Node()
-        #path = astar(self.map.map_matrix, (rectEnemy.x(), rectEnemy.y()), (rectPlayer.x(), rectPlayer.y()))
-        #[newX, newY] = search_pacman_return_next_step_coordinate(self.map.map_matrix, [rectEnemy.x(), rectEnemy.y()],
-                                                                 #[rectPlayer.x(), rectPlayer.y()])
+        print(rectPlayer.x())
+        print(rectPlayer.y())
+        print(rectEnemy.x())
+        print(rectEnemy.y())
+        print("-------------")
+        print(rectEnemy1.x())
+        print(rectEnemy1.y())
+        print("-------------")
+        print(rectEnemy2.x())
+        print(rectEnemy2.y())
+        print("-------------")
+        print(rectEnemy3.x())
+        print(rectEnemy3.y())
+        print("-------------")
+        print(rectEnemy4.x())
+        print(rectEnemy4.y())
 
-        #print(path)
-        #print(newY)
-        # 1-left
-        # 2-up
-        # 3-down
-        # 4-right
+        print("====")
+        enemy = Enemy()
+        print(enemy.coordinateForEnemies)
+        #time.sleep(2)
+        direction = 0
+        #direction = random.randint(1, 4)
+        #po 4 na x osu----po 6.1 po y osi
+        #self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(), rectEnemy.height())
+
+        #time.sleep(1)
+        isTimeToDirection = True
+        for i in enemy.coordinateForEnemies:
+            if i[0] == float(rectEnemy.x()) and i[1] == float(rectEnemy.y()) and not isTimeToDirection:
+                direction = random.randint(1, 4)
+                isTimeToDirection = False
+                if direction == 1:
+                    self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 2:
+                    self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 3:
+                    self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() - 6.1, rectEnemy.width(),
+                                                    rectEnemy.height())
+                if direction == 4:
+                    self.enemiesList[0].setGeometry(rectEnemy.x(), rectEnemy.y() + 6.1, rectEnemy.width(),
+                                                    rectEnemy.height())
+                break
+
+        if isTimeToDirection:
+            direction = random.randint(1, 4)
+            if direction == 1:
+                self.enemiesList[0].setGeometry(rectEnemy.x() - 4, rectEnemy.y(), rectEnemy.width(),
+                                                rectEnemy.height())
+            if direction == 2:
+                self.enemiesList[0].setGeometry(rectEnemy.x() + 4, rectEnemy.y(), rectEnemy.width(),
+                                                rectEnemy.height())
+            if direction == 3:
+                self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) - 6.1, rectEnemy.width(),
+                                                rectEnemy.height())
+            if direction == 4:
+                self.enemiesList[0].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 6.1, rectEnemy.width(),
+                                                rectEnemy.height())
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
