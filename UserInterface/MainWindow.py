@@ -1,13 +1,11 @@
 import copy
-import multiprocessing
 import os
 import random
 import sys
 import time
 import winsound
-from multiprocessing.pool import Pool
 
-from PyQt5.QtCore import QByteArray, Qt, QSize, QRect, QPoint, QCoreApplication
+from PyQt5.QtCore import QByteArray, Qt, QSize, QCoreApplication
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, QSizePolicy, \
     QScrollArea, QComboBox, QLineEdit, QFrame, QGraphicsView, QGraphicsScene, QTableWidget, QTableWidgetItem, \
@@ -21,6 +19,7 @@ from Map.key_notifier import KeyNotifier
 from UserInterface import PointLabel
 
 isTimeToDirection = True
+drawCounter = 0
 
 
 # split a list into evenly sized chunks
@@ -55,65 +54,69 @@ def contains_at_least_one(currentKeys, allCommand):
 
 
 def drawMethod(layout, number_of_players, players_names):
-    # cleanGrid(layout)
-    players = []
-    for i in range(int(number_of_players)):
-        players.append(players_names[i])
+    global drawCounter
+    drawCounter += 1
 
-    random.shuffle(players)
+    if drawCounter == 1:
+        # cleanGrid(layout)
+        players = []
+        for i in range(int(number_of_players)):
+            players.append(players_names[i])
 
-    semi_final_1 = []
-    semi_final_2 = []
+        random.shuffle(players)
 
-    if int(number_of_players) == 4:
-        for i in range(len(players)):
-            if i < 2:
-                semi_final_1.append(players[i])
+        semi_final_1 = []
+        semi_final_2 = []
+
+        if int(number_of_players) == 4:
+            for i in range(len(players)):
+                if i < 2:
+                    semi_final_1.append(players[i])
+                else:
+                    semi_final_2.append(players[i])
+
+        elif int(number_of_players) == 5 or int(number_of_players) == 6:
+            for i in range(len(players)):
+                if i < 3:
+                    semi_final_1.append(players[i])
+                else:
+                    semi_final_2.append(players[i])
+
+        elif int(number_of_players) == 7 or int(number_of_players) == 8:
+            for i in range(len(players)):
+                if i < 4:
+                    semi_final_1.append(players[i])
+                else:
+                    semi_final_2.append(players[i])
+
+        print(players)
+        print(semi_final_1)
+        print(semi_final_2)
+        labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+
+        labelSemiFinal1 = QLabel()
+        sf1 = ""
+        for semi in semi_final_1:
+            if semi_final_1[-1] != semi:
+                sf1 += semi + " vs "
             else:
-                semi_final_2.append(players[i])
+                sf1 += semi
+        labelSemiFinal1.setText("First semi final: " + sf1)
+        labelSemiFinal1.setStyleSheet(labelStyle)
+        layout.addWidget(labelSemiFinal1, 9, 0)
 
-    elif int(number_of_players) == 5 or int(number_of_players) == 6:
-        for i in range(len(players)):
-            if i < 3:
-                semi_final_1.append(players[i])
+        labelSemiFinal2 = QLabel()
+        sf2 = ""
+        for semi in semi_final_2:
+            if semi_final_2[-1] != semi:
+                sf2 += semi + " vs "
             else:
-                semi_final_2.append(players[i])
+                sf2 += semi
+        labelSemiFinal2.setText("Second semi final: " + sf2)
+        labelSemiFinal2.setStyleSheet(labelStyle)
+        layout.addWidget(labelSemiFinal2, 10, 0)
 
-    elif int(number_of_players) == 7 or int(number_of_players) == 8:
-        for i in range(len(players)):
-            if i < 4:
-                semi_final_1.append(players[i])
-            else:
-                semi_final_2.append(players[i])
-
-    print(players)
-    print(semi_final_1)
-    print(semi_final_2)
-    labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
-
-    labelSemiFinal1 = QLabel()
-    sf1 = ""
-    for semi in semi_final_1:
-        if semi_final_1[-1] != semi:
-            sf1 += semi + " vs "
-        else:
-            sf1 += semi
-    labelSemiFinal1.setText("First semi final: " + sf1)
-    labelSemiFinal1.setStyleSheet(labelStyle)
-    layout.addWidget(labelSemiFinal1, 9, 0)
-
-    labelSemiFinal2 = QLabel()
-    sf2 = ""
-    for semi in semi_final_2:
-        if semi_final_2[-1] != semi:
-            sf2 += semi + " vs "
-        else:
-            sf2 += semi
-    labelSemiFinal2.setText("Second semi final: " + sf2)
-    labelSemiFinal2.setStyleSheet(labelStyle)
-    layout.addWidget(labelSemiFinal2, 10, 0)
-
-    # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za SM3
+        # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za SM3
 
 
 class MainWindow(QWidget):
@@ -152,7 +155,7 @@ class MainWindow(QWidget):
         self.points = Points()
         self.indexListOfPoints = []
 
-        self.playerHealth = [3, 3, 3, 3]            #!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.playerHealth = [3, 3, 3, 3]
 
         self.tournament = None
 
@@ -219,6 +222,8 @@ class MainWindow(QWidget):
         self.movie.start()
 
     def tournamentWindow(self, layout):
+        global drawCounter
+        drawCounter = 0
         cleanGrid(layout)
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
         comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
@@ -417,49 +422,6 @@ class MainWindow(QWidget):
             self.enemyThread.enemyStart()
             self.enemyThreads.append(self.enemyThread)
 
-        # Setup a list of processes that we want to run
-        #processes = [multiprocessing.Process(target=test2, args=(1, )) for x in range(4)]
-
-       # Run processes
-        '''for p in processes:
-            p.start()
-
-        # Exit the completed processes
-        for p in processes:
-            p.join()'''
-
-        '''listIndex = []
-
-        total = int(number_of_enemies)
-        part = total / 3
-        #slice = chunks(self.playerList, chunk_size)
-        indexProcess1 = []
-        indexProcess2 = []
-        indexProcess3 = []
-
-        for i in range(total):
-            if i < part:
-                indexProcess1.append(i)
-            elif part <= i < part*2:
-                indexProcess2.append(i)
-            else:
-                indexProcess3.append(i)'''
-
-        '''p1 = multiprocessing.Process(target=self.methodMovingEnemy, args=(0, ))
-        p1.start()
-        p2 = multiprocessing.Process(target=self.methodMovingEnemy, args=(1, ))
-        p3 = multiprocessing.Process(target=self.methodMovingEnemy, args=(2, ))
-        #p1.start()
-        p2.start()
-        p3.start()'''
-
-
-        '''for i in range(int(number_of_enemies)):
-            listIndex.append(i)
-
-        with Pool(3) as self.p:
-            self.p.map_async(self.methodMovingEnemy, listIndex)'''
-
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
         tableFrame = QFrame()
         self.mapFrame = QFrame()
@@ -551,7 +513,7 @@ class MainWindow(QWidget):
                     self.map_point_label_row.append(i)
                     self.map_point_label_column.append(j)
 
-                    self.indexListOfPoints.append((i, j))           #for big points
+                    self.indexListOfPoints.append((i, j))           # for big points
 
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
                 QApplication.processEvents()
@@ -559,7 +521,7 @@ class MainWindow(QWidget):
         self.playerList = []  # list of players
         self.playerRotationList = []  # list of players rotation
         self.enemiesList = []  # list od enemies
-        self.playerStartList = []                           #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+        self.playerStartList = []
 
         enemyCounter = 1
 
@@ -775,9 +737,9 @@ class MainWindow(QWidget):
                                 if i == randomCoordinate:
                                     labelIndex = i
 
-                            scaledPix = self.bigPointPix.scaled(
+                            '''scaledPix = self.bigPointPix.scaled(
                                 int(self.mapFrame.width() / len(self.map.map_matrix[0])) - 5,
-                                int(self.mapFrame.height() / len(self.map.map_matrix)) - 5)
+                                int(self.mapFrame.height() / len(self.map.map_matrix)) - 5)'''
 
                             self.map_point_labels[labelIndex].big_point = True
                             self.map_point_labels[labelIndex].repaint()
@@ -790,7 +752,7 @@ class MainWindow(QWidget):
     def methodMovingEnemy(self, i):
 
         global isTimeToDirection
-        enemy = self.enemyThreads[i].get_enemy()
+        # enemy = self.enemyThreads[i].get_enemy()
         enemy_values = self.enemyThreads[i].get_enemy_values()  # svi neprijatelji su unisteni
 
         random.seed(time.time())
