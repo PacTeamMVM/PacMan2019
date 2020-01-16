@@ -141,6 +141,9 @@ class MainWindow(QWidget):
         # object for players points
         self.points = Points()
 
+        self.x1 = 0
+        self.y1 = 0
+
         self.tournament = None
 
         self.show()
@@ -499,6 +502,7 @@ class MainWindow(QWidget):
         self.playerList = []                # list of players
         self.playerRotationList = []        # list of players rotation
         self.enemiesList = []               # list od enemies
+        self.playerStartList = []
 
         enemyCounter = 1
 
@@ -545,6 +549,8 @@ class MainWindow(QWidget):
                     self.map.map_matrix[i][j] = len(self.playerList) + 2    # Setting players on the map
                     mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
 
+                    #self.playerStartList.append([graphView.x(), graphView.y()])
+
                 elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(number_of_enemies):  # start position of enemy
 
                     enemyCounter += 1
@@ -557,6 +563,11 @@ class MainWindow(QWidget):
                     self.map.map_matrix[i][j] = 7                       # Setting enemies on the map
                     self.enemiesList.append(label)                      # put enemy in list of enemies
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
+
+        self.playerStartList.append([self.playerList[0].width() * 8, self.playerList[0].height() * 6.5])
+        self.playerStartList.append([self.playerList[0].width() * 26, self.playerList[0].height() * 6.5])
+        self.playerStartList.append([self.playerList[0].width() * 8, self.playerList[0].height() * 27.5])
+        self.playerStartList.append([self.playerList[0].width() * 26.2, self.playerList[0].height() * 27.5])
 
         self.setLayout(layout)
 
@@ -614,6 +625,7 @@ class MainWindow(QWidget):
 
                 self.collect_points(self.playerList[i], i)
                 self.check_teleport(self.playerList[i])
+                #self.check_death(self.playerList[i], i)
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
@@ -634,6 +646,14 @@ class MainWindow(QWidget):
             player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7), rect.y(), rect.width(), rect.height())
         elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width():
             player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(), rect.height())
+
+
+    def check_death(self, player_label, index):
+        rectPlayer = player_label.geometry()
+        for i in range(len(self.enemiesList)):
+            rectEnemy = self.enemiesList[i].frameGeometry()
+            if rectEnemy.intersects(rectPlayer):
+                player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],rectPlayer.width(), rectPlayer.height())
 
     def collect_points(self, player_label, index):
         # lock = Lock()
@@ -720,6 +740,8 @@ class MainWindow(QWidget):
                                                 rectEnemy.height())
             enemy_values.direction_counter -= 1
             self.check_teleport(self.enemiesList[i])
+            for j in range(len(self.playerList)):
+                self.check_death(self.playerList[j], j)
 
     def backWindow(self, layout):
         self.enemyThread.enemyDie()
