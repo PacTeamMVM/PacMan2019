@@ -141,8 +141,7 @@ class MainWindow(QWidget):
         # object for players points
         self.points = Points()
 
-        self.x1 = 0
-        self.y1 = 0
+        self.playerHealth = [3, 3, 3, 3]
 
         self.tournament = None
 
@@ -647,13 +646,23 @@ class MainWindow(QWidget):
         elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width():
             player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(), rect.height())
 
-
     def check_death(self, player_label, index):
         rectPlayer = player_label.geometry()
         for i in range(len(self.enemiesList)):
             rectEnemy = self.enemiesList[i].frameGeometry()
             if rectEnemy.intersects(rectPlayer):
                 player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],rectPlayer.width(), rectPlayer.height())
+                self.playerHealth[index] -= 1
+                if self.playerHealth[index] == 0:
+                    player_label.setGeometry(self.playerList[index].x() * -1, self.playerList[index].y() * -1,
+                                             rectPlayer.width(), rectPlayer.height())
+                rowCount = self.tableWidget.rowCount()
+                for row in range(rowCount):
+                    healthItem = QTableWidgetItem(str(self.playerHealth[index]))
+                    healthItem.setTextAlignment(Qt.AlignCenter)
+                    healthItem.setFlags(Qt.ItemIsEnabled)
+                    self.tableWidget.setItem(index, 1, healthItem)
+                    break
 
     def collect_points(self, player_label, index):
         # lock = Lock()
