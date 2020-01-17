@@ -4,6 +4,7 @@ import random
 import sys
 import time
 import winsound
+import time
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QCoreApplication
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
@@ -17,6 +18,7 @@ from Map.Points import Points
 from Map.key_notifier import KeyNotifier
 
 from UserInterface import PointLabel
+from threading import Timer
 
 isTimeToDirection = True
 drawCounter = 0
@@ -159,6 +161,7 @@ class MainWindow(QWidget):
         self.indexListOfPoints = []
 
         self.playerHealth = [3, 3, 3, 3]
+        self.canPacmanEatGhost = False
         self.winnerLabel = QLabel()         # label for print winner player and points
 
         self.tournament = None
@@ -685,19 +688,25 @@ class MainWindow(QWidget):
         for i in range(len(self.enemiesList)):
             rectEnemy = self.enemiesList[i].frameGeometry()
             if rectEnemy.intersects(rectPlayer):
-                player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],
-                                         rectPlayer.width(), rectPlayer.height())
-                self.playerHealth[index] -= 1
-                if self.playerHealth[index] == 0:
-                    player_label.setGeometry(self.playerList[index].x() * -1, self.playerList[index].y() * -1,
+                if not self.canPacmanEatGhost:
+                    player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],
                                              rectPlayer.width(), rectPlayer.height())
-                rowCount = self.tableWidget.rowCount()
-                for row in range(rowCount):
-                    healthItem = QTableWidgetItem(str(self.playerHealth[index]))
-                    healthItem.setTextAlignment(Qt.AlignCenter)
-                    healthItem.setFlags(Qt.ItemIsEnabled)
-                    self.tableWidget.setItem(index, 1, healthItem)
-                    break
+                    self.playerHealth[index] -= 1
+                    if self.playerHealth[index] == 0:
+                        player_label.setGeometry(self.playerList[index].x() * -1, self.playerList[index].y() * -1,
+                                                 rectPlayer.width(), rectPlayer.height())
+                    rowCount = self.tableWidget.rowCount()
+                    for row in range(rowCount):
+                        healthItem = QTableWidgetItem(str(self.playerHealth[index]))
+                        healthItem.setTextAlignment(Qt.AlignCenter)
+                        healthItem.setFlags(Qt.ItemIsEnabled)
+                        self.tableWidget.setItem(index, 1, healthItem)
+                        break
+                elif self.canPacmanEatGhost:
+                    self.enemiesList[i].setGeometry(rectEnemy.x() * -1000, rectEnemy.y() * -1000, rectEnemy.width(), rectEnemy.height())
+
+    def switchBool(self):
+        self.canPacmanEatGhost = False
 
     def collect_points(self, player_label, index):
         # lock = Lock()
@@ -714,6 +723,9 @@ class MainWindow(QWidget):
                 if self.map_point_labels[j].collected:
                     if self.map_point_labels[j].big_point:
                         self.map_point_labels[j].collected_big = True
+                        self.canPacmanEatGhost = True   # bool da pacman moze jesti duha
+                        t = Timer(10, self.switchBool)  # tajmer koji ce izbrojati nakon koliko sekundi pacman vise nema mogucnost jedenja duhova
+                        t.start()
                         # urediti povecanje poena           !!!!
                 else:
                     self.map_point_labels[j].collected = True
