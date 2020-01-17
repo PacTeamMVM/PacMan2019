@@ -89,16 +89,16 @@ def drawMethod(layout, number_of_players, players_names):
                 else:
                     semi_final_2.append(players[i])
 
-        print(players)
-        print(semi_final_1)
-        print(semi_final_2)
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+
+        fileSemiFinal1 = open("semi_final1.txt", 'w')
+        fileSemiFinal2 = open("semi_final2.txt", 'w')
 
         labelSemiFinal1 = QLabel()
         sf1 = ""
         for semi in semi_final_1:
             if semi_final_1[-1] != semi:
-                sf1 += semi + " vs "
+                sf1 += semi + " VS "
             else:
                 sf1 += semi
         labelSemiFinal1.setText("First semi final: " + sf1)
@@ -109,14 +109,20 @@ def drawMethod(layout, number_of_players, players_names):
         sf2 = ""
         for semi in semi_final_2:
             if semi_final_2[-1] != semi:
-                sf2 += semi + " vs "
+                sf2 += semi + " VS "
+                with open("semi_final1.txt", 'a'):
+                    fileSemiFinal1.write(sf1)
             else:
                 sf2 += semi
+                with open("semi_final2.txt", 'a'):
+                    fileSemiFinal2.write(sf2)
+
         labelSemiFinal2.setText("Second semi final: " + sf2)
         labelSemiFinal2.setStyleSheet(labelStyle)
         layout.addWidget(labelSemiFinal2, 10, 0)
 
-        # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za SM3
+        # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za final
+
 
 
 class MainWindow(QWidget):
@@ -137,8 +143,6 @@ class MainWindow(QWidget):
         self.key_notifier = None
         self.enemyThreads = []
         self.enemyThread = None
-
-        #self.p = None
 
         self.movie = None
         self.moviePlayer = None
@@ -348,7 +352,7 @@ class MainWindow(QWidget):
 
         comboBoxEnemy = QComboBox()
         comboBoxEnemy.setStyleSheet(comboBoxStyle)
-        for i in range(16):
+        for i in range(4):
             comboBoxEnemy.addItem(str(i + 1))
         layout.addWidget(comboBoxEnemy, 1, 2)
 
@@ -810,14 +814,6 @@ class MainWindow(QWidget):
             self.enemyThreads[i].enemyDie()
 
         self.initWindow(layout)
-
-    # test
-    def mouseMoveEvent(self, e):  # metoda koja se automatski poziva kada detektuje da pomeram misa
-        x = e.x()
-        y = e.y()
-
-        text = "x: {0},  y: {1}".format(x, y)
-        self.setWindowTitle(text)
 
 
 if __name__ == '__main__':
