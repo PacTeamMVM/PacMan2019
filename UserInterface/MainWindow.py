@@ -124,7 +124,6 @@ def drawMethod(layout, number_of_players, players_names):
         # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za final
 
 
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -160,8 +159,13 @@ class MainWindow(QWidget):
         self.indexListOfPoints = []
 
         self.playerHealth = [3, 3, 3, 3]
+        self.winnerLabel = QLabel()         # label for print winner player and points
 
         self.tournament = None
+        self.matchIdentifier = 0            # number of match on tournament
+                                            # 1 - semi final 1
+                                            # 2 - semi final 2
+                                            # 3 - final
 
         self.show()
         winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
@@ -297,7 +301,7 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 11, 2)
-        # buttonBack.clicked.connect(lambda: mazeTournament(...)
+        buttonBack.clicked.connect(lambda: self.mazeTorunament(layout, comboBoxTournamentPlayer.currentText()))
 
     def aboutWindow(self, layout):
         cleanGrid(layout)
@@ -412,7 +416,7 @@ class MainWindow(QWidget):
         cleanGrid(layout)
 
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
-        self.setWindowState(Qt.WindowMaximized)
+        #self.setWindowState(Qt.WindowMaximized)
 
         self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
@@ -440,6 +444,7 @@ class MainWindow(QWidget):
         tableGrid = QGridLayout()
         mapGrid = QGridLayout()
 
+        tableFrame.setFixedSize(418, 205)
         tableFrame.setLayout(tableGrid)
         self.mapFrame.setLayout(mapGrid)
         layout.addWidget(self.mapFrame, 0, 0)
@@ -814,6 +819,39 @@ class MainWindow(QWidget):
             self.enemyThreads[i].enemyDie()
 
         self.initWindow(layout)
+
+    def mazeTorunament(self, layout, number_of_players):
+        self.matchIdentifier += 1
+        labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
+        print("Test maze tournament")
+        cleanGrid(layout)
+        labelTitle = QLabel()
+        labelTitle.setStyleSheet(labelStyle)
+
+        if self.matchIdentifier == 1:
+            labelTitle.setText("SEMI FINAL 1")
+        elif self.matchIdentifier == 2:
+            labelTitle.setText("SEMI FINAL 2")
+        elif self.matchIdentifier == 3:
+            labelTitle.setText("FINAL")
+
+        layout.addWidget(labelTitle, 0, 0)
+
+        list_players = []       #lista u kojoj..kao argument funkcije ce mi trebati sviunosi  igraca
+
+        buttonBack = QPushButton("BACK", self)
+        buttonBack.setStyleSheet(
+            'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+        layout.addWidget(buttonBack, 1, 0)
+        #buttonBack.clicked.connect(lambda: self.backWindow(layout))
+        buttonBack.clicked.connect(lambda: self.initWindow(layout))
+
+        if self.matchIdentifier == 1 or self.matchIdentifier == 2:
+            buttonNextMatch = QPushButton("NEXT MATCH", self)
+            buttonNextMatch.setStyleSheet(
+                'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+            layout.addWidget(buttonNextMatch, 1, 1)
+            buttonNextMatch.clicked.connect(lambda: self.mazeTorunament(layout, number_of_players))
 
 
 if __name__ == '__main__':
