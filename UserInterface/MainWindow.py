@@ -4,7 +4,7 @@ import random
 import sys
 import time
 import winsound
-import time
+from threading import Timer
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QCoreApplication
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
@@ -18,15 +18,9 @@ from Map.Points import Points
 from Map.key_notifier import KeyNotifier
 
 from UserInterface import PointLabel
-from threading import Timer
 
 isTimeToDirection = True
 drawCounter = 0
-
-
-# split a list into evenly sized chunks
-def chunks(l, n):
-    return [l[i:i+n] for i in range(0, len(l), n)]
 
 
 def cleanGrid(layout):
@@ -123,7 +117,8 @@ def drawMethod(layout, number_of_players, players_names):
         labelSemiFinal2.setStyleSheet(labelStyle)
         layout.addWidget(labelSemiFinal2, 10, 0)
 
-        # upisujem u fajlove..imacu tri fajla..jedan za SM1,jedan za SM2 i jedan za final
+        fileSemiFinal1.close()
+        fileSemiFinal2.close()
 
 
 class MainWindow(QWidget):
@@ -140,6 +135,7 @@ class MainWindow(QWidget):
         self.bigPointPix = QPixmap('big_point.png')
         self.label1 = QLabel(self)
         self.label2 = QLabel(self)
+        self.tableWidget = None
 
         self.key_notifier = None
         self.enemyThreads = []
@@ -161,14 +157,12 @@ class MainWindow(QWidget):
         self.indexListOfPoints = []
 
         self.playerHealth = [3, 3, 3, 3]
-        self.canPacmanEatGhost = False
+        self.canPacManEatGhost = False
         self.winnerLabel = QLabel()         # label for print winner player and points
 
         self.tournament = None
-        self.matchIdentifier = 0            # number of match on tournament
-                                            # 1 - semi final 1
-                                            # 2 - semi final 2
-                                            # 3 - final
+        self.matchIdentifier = 0
+        # number of match on tournament, 1 - semi final 1,  2 - semi final 2, 3 - final
 
         self.show()
         winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
@@ -304,7 +298,7 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 11, 2)
-        buttonBack.clicked.connect(lambda: self.mazeTorunament(layout, comboBoxTournamentPlayer.currentText()))
+        buttonBack.clicked.connect(lambda: self.mazeTournament(layout, comboBoxTournamentPlayer.currentText()))
 
     def aboutWindow(self, layout):
         cleanGrid(layout)
@@ -520,7 +514,6 @@ class MainWindow(QWidget):
                     scaledPix = self.pointPix.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0])) - 5,
                                                      int(self.mapFrame.height() / len(self.map.map_matrix)) - 5)
                     label = PointLabel.PointLabel(scaledPix)
-                    #label.setPixmap(scaledPix)
                     self.map_point_labels.append(label)
                     self.map_point_label_row.append(i)
                     self.map_point_label_column.append(j)
@@ -658,7 +651,7 @@ class MainWindow(QWidget):
 
                 self.collect_points(self.playerList[i], i)
                 self.check_teleport(self.playerList[i])
-                # self.check_death(self.playerList[i], i)                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                # self.check_death(self.playerList[i], i)
                 QApplication.processEvents()
 
     def closeEvent(self, event):
@@ -683,12 +676,21 @@ class MainWindow(QWidget):
             player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(),
                                      rect.height())
 
+    def check_teleport_enemy(self, player_label):
+        rect = player_label.geometry()
+        if rect.x() < self.map_wall_labels[0].x() + 20:
+            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0])) - 20, rect.y(), rect.width(),
+                                     rect.height())
+        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0])) - 20:
+            player_label.setGeometry(self.map_wall_labels[0].x() + 20, rect.y(), rect.width(),
+                                     rect.height())
+
     def check_death(self, player_label, index):
         rectPlayer = player_label.geometry()
         for i in range(len(self.enemiesList)):
             rectEnemy = self.enemiesList[i].frameGeometry()
             if rectEnemy.intersects(rectPlayer):
-                if not self.canPacmanEatGhost:
+                if not self.canPacManEatGhost:
                     player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],
                                              rectPlayer.width(), rectPlayer.height())
                     self.playerHealth[index] -= 1
@@ -702,11 +704,12 @@ class MainWindow(QWidget):
                         healthItem.setFlags(Qt.ItemIsEnabled)
                         self.tableWidget.setItem(index, 1, healthItem)
                         break
-                elif self.canPacmanEatGhost:
-                    self.enemiesList[i].setGeometry(rectEnemy.x() * -1000, rectEnemy.y() * -1000, rectEnemy.width(), rectEnemy.height())
+                elif self.canPacManEatGhost:
+                    self.enemiesList[i].setGeometry(rectEnemy.x() * -1000, rectEnemy.y() * -1000, rectEnemy.width(),
+                                                    rectEnemy.height())
 
     def switchBool(self):
-        self.canPacmanEatGhost = False
+        self.canPacManEatGhost = False
 
     def collect_points(self, player_label, index):
         # lock = Lock()
@@ -723,10 +726,11 @@ class MainWindow(QWidget):
                 if self.map_point_labels[j].collected:
                     if self.map_point_labels[j].big_point:
                         self.map_point_labels[j].collected_big = True
-                        self.canPacmanEatGhost = True   # bool da pacman moze jesti duha
-                        t = Timer(10, self.switchBool)  # tajmer koji ce izbrojati nakon koliko sekundi pacman vise nema mogucnost jedenja duhova
+                        self.canPacManEatGhost = True                       # bool - mode Pac-man eat ghost
+                        # a timer that will count how many second the Pac-man no longer has the possibility to eat ghost
+                        t = Timer(10, self.switchBool)
                         t.start()
-                        # urediti povecanje poena           !!!!
+                        # do increase points
                 else:
                     self.map_point_labels[j].collected = True
                     rowCount = self.tableWidget.rowCount()
@@ -758,13 +762,8 @@ class MainWindow(QWidget):
                                 if i == randomCoordinate:
                                     labelIndex = i
 
-                            '''scaledPix = self.bigPointPix.scaled(
-                                int(self.mapFrame.width() / len(self.map.map_matrix[0])) - 5,
-                                int(self.mapFrame.height() / len(self.map.map_matrix)) - 5)'''
-
                             self.map_point_labels[labelIndex].big_point = True
                             self.map_point_labels[labelIndex].repaint()
-                            # self.map_point_labels[labelIndex].setPixmap(scaledPix)
                             QCoreApplication.processEvents()
                 self.map_point_labels[j].repaint()
                 break
@@ -774,7 +773,7 @@ class MainWindow(QWidget):
 
         global isTimeToDirection
         # enemy = self.enemyThreads[i].get_enemy()
-        enemy_values = self.enemyThreads[i].get_enemy_values()  # svi neprijatelji su unisteni
+        enemy_values = self.enemyThreads[i].get_enemy_values()  # all enemies destroyed
 
         random.seed(time.time())
         rectEnemy = self.enemiesList[i].frameGeometry()
@@ -822,7 +821,7 @@ class MainWindow(QWidget):
                 self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 1, rectEnemy.width(),
                                                 rectEnemy.height())
             enemy_values.direction_counter -= 1
-            self.check_teleport(self.enemiesList[i])
+            self.check_teleport_enemy(self.enemiesList[i])
             for j in range(len(self.playerList)):
                 self.check_death(self.playerList[j], j)
 
@@ -832,7 +831,7 @@ class MainWindow(QWidget):
 
         self.initWindow(layout)
 
-    def mazeTorunament(self, layout, number_of_players):
+    def mazeTournament(self, layout, number_of_players):
         self.matchIdentifier += 1
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
         print("Test maze tournament")
@@ -849,7 +848,45 @@ class MainWindow(QWidget):
 
         layout.addWidget(labelTitle, 0, 0)
 
-        list_players = []       #lista u kojoj..kao argument funkcije ce mi trebati sviunosi  igraca
+        file = None
+        if self.matchIdentifier == 1:
+            file = open("semi_final1.txt", 'r')
+        elif self.matchIdentifier == 2:
+            file = open("semi_final2.txt", 'r')
+        elif self.matchIdentifier == 3:
+            #load file for final
+            pass
+
+        informationFromFile = file.read()
+        playerNames = []
+        for i in range(len(informationFromFile.split())):
+            if i % 2 == 0:
+                playerNames.append(informationFromFile.split()[i])
+
+        tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; ' \
+                     'width: 120px; }'
+        self.tableWidget = QTableWidget()
+        #self.tableWidget.si
+        self.tableWidget.setRowCount(int(number_of_players))
+        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setStyleSheet(tableStyle)
+        self.tableWidget.setHorizontalHeaderLabels(["Name", "Health", "Points"])
+        layout.addWidget(self.tableWidget)
+
+        for i in range(len(playerNames)):
+            nameItem = QTableWidgetItem(str(playerNames[i]))
+            nameItem.setTextAlignment(Qt.AlignCenter)
+            nameItem.setFlags(Qt.ItemIsEnabled)
+            self.tableWidget.setItem(i, 0, nameItem)
+            healthItem = QTableWidgetItem("3")
+            healthItem.setTextAlignment(Qt.AlignCenter)
+            healthItem.setFlags(Qt.ItemIsEnabled)
+            self.tableWidget.setItem(i, 1, healthItem)
+            pointsItem = QTableWidgetItem("0")
+            pointsItem.setTextAlignment(Qt.AlignCenter)
+            pointsItem.setFlags(Qt.ItemIsEnabled)
+            self.tableWidget.setItem(i, 2, pointsItem)
+            self.tableWidget.setFocusPolicy(Qt.NoFocus)
 
         buttonBack = QPushButton("BACK", self)
         buttonBack.setStyleSheet(
@@ -863,7 +900,7 @@ class MainWindow(QWidget):
             buttonNextMatch.setStyleSheet(
                 'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
             layout.addWidget(buttonNextMatch, 1, 1)
-            buttonNextMatch.clicked.connect(lambda: self.mazeTorunament(layout, number_of_players))
+            buttonNextMatch.clicked.connect(lambda: self.mazeTournament(layout, number_of_players))
 
 
 if __name__ == '__main__':
