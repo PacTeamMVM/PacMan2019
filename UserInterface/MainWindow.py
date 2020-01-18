@@ -133,38 +133,11 @@ class MainWindow(QWidget):
         self.gatePix = QPixmap('gate.png')
         self.pointPix = QPixmap('point.png')
         self.bigPointPix = QPixmap('big_point.png')
-        self.label1 = QLabel(self)
-        self.label2 = QLabel(self)
-        self.tableWidget = None
 
         self.key_notifier = None
-        self.enemyThreads = []
-        self.enemyThread = None
-        self.enemies_dead = 0
-
-        self.movie = None
-        self.moviePlayer = None
         self.playerNames = None
-
-        # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
-        self.player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
-                            [Qt.Key_W, Qt.Key_S, Qt.Key_A, Qt.Key_D],
-                            [Qt.Key_8, Qt.Key_5, Qt.Key_4, Qt.Key_6],
-                            [Qt.Key_I, Qt.Key_K, Qt.Key_J, Qt.Key_L]
-                            ]
-
-        # object for players points
-        self.points = Points()
-        self.indexListOfPoints = []
-
-        self.playerHealth = [3, 3, 3, 3]
-        self.players_dead = 0
-        self.canPacManEatGhost = False
-        self.winnerLabel = QLabel()         # label for print winner player and points
-
-        self.tournament = None
-        self.matchIdentifier = 0
-        # number of match on tournament, 1 - semi final 1,  2 - semi final 2, 3 - final
+        self.level = 0
+        self.__init_var_(False)
 
         self.show()
         winsound.PlaySound("music.wav", winsound.SND_LOOP + winsound.SND_ASYNC)
@@ -229,13 +202,12 @@ class MainWindow(QWidget):
         self.movie.start()
 
     def tournamentWindow(self, layout):
+        cleanGrid(layout)
         global drawCounter
         drawCounter = 0
-        cleanGrid(layout)
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
         comboBoxStyle = 'QComboBox {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
         textBoxStyle = 'QLineEdit {background-color: white; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
-
         labelTournamentPlayers = QLabel()
         labelTournamentPlayers.setText("Number od players on tournament")
         labelTournamentPlayers.setStyleSheet(labelStyle)
@@ -407,15 +379,15 @@ class MainWindow(QWidget):
         layout.addWidget(buttonPlay, 10, 2)
         buttonPlay.clicked.connect(lambda: self.maze(layout, comboBoxPlayer.currentText(), comboBoxEnemy.currentText(),
                                                      [textBoxFirst.text(), textBoxSecond.text(), textBoxThird.text(),
-                                                      textBoxFourth.text()]))
+                                                      textBoxFourth.text()], False))
 
         self.setLayout(layout)
 
-    def maze(self, layout, number_of_players, number_of_enemies, player_names):
+    def maze(self, layout, number_of_players, number_of_enemies, player_names, is_next_level):
         cleanGrid(layout)
 
+        self.__init_var_(is_next_level)
         self.__init_ui__(layout, number_of_players, number_of_enemies, player_names)
-        #self.setWindowState(Qt.WindowMaximized)
 
         self.key_notifier = KeyNotifier()
         self.key_notifier.key_signal.connect(self.__update_position__)
@@ -425,9 +397,72 @@ class MainWindow(QWidget):
             self.enemyThread = EnemyThread()
             self.enemyThread.assign_enemy(self.enemiesList[i])
             self.enemyThread.index = i
+            self.enemyThread.changeEnemySpeed(self.level)
             self.enemyThread.enemy_signal.connect(self.methodMovingEnemy)
             self.enemyThread.enemyStart()
             self.enemyThreads.append(self.enemyThread)
+        #self.setWindowState(Qt.WindowMaximized)
+
+    def __init_var_(self, is_next_level=False):
+
+        if is_next_level:
+            self.key_notifier.die()
+            '''
+            while True:
+                removed = False
+                for i in range(len(self.playerNames)):
+                    if "_DEAD" in self.playerNames[i]:
+                        self.playerList.remove(self.playerList[i])
+                        self.playerHealth.remove(self.playerHealth[i])
+                        self.playerStartList.remove(self.playerStartList[i])
+                        self.playerRotationList.remove(self.playerRotationList[i])
+                        self.playerNames.remove(self.playerNames[i])
+                        removed = True
+                        break
+                if not removed:
+                    break
+            '''
+            for i in range(len(self.enemyThreads)):
+                self.enemyThreads[i].enemyDie()
+            self.level += 1
+        else:
+            # object for players points
+            self.points = Points()
+
+            # set point counters on zero
+            self.points.pointsPlayer1 = 0
+            self.points.pointsPlayer2 = 0
+            self.points.pointsPlayer3 = 0
+            self.points.pointsPlayer4 = 0
+
+            self.playerHealth = [3, 3, 3, 3]
+            self.players_dead = 0
+
+            self.level = 0
+
+        self.tableWidget = None
+
+        self.enemyThreads = []
+        self.enemyThread = None
+        self.enemies_dead = 0
+
+        self.movie = None
+        self.moviePlayer = None
+
+        # The keys for movement must go UP, DOWN, LEFT, RIGHT in the following list.
+        self.player_keys = [[Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right],
+                            [Qt.Key_W, Qt.Key_S, Qt.Key_A, Qt.Key_D],
+                            [Qt.Key_8, Qt.Key_5, Qt.Key_4, Qt.Key_6],
+                            [Qt.Key_I, Qt.Key_K, Qt.Key_J, Qt.Key_L]
+                            ]
+
+        self.indexListOfPoints = []
+
+        self.canPacManEatGhost = False
+        self.winnerLabel = QLabel()  # label for print winner player and points
+
+        self.tournament = None
+        self.matchIdentifier = 0
 
     def __init_ui__(self, layout, number_of_players, number_of_enemies, player_names):
         tableFrame = QFrame()
@@ -463,21 +498,26 @@ class MainWindow(QWidget):
             nameItem.setTextAlignment(Qt.AlignCenter)
             nameItem.setFlags(Qt.ItemIsEnabled)
             self.tableWidget.setItem(i, 0, nameItem)
-            healthItem = QTableWidgetItem("3")
+            healthItem = QTableWidgetItem(str(self.playerHealth[i]))
             healthItem.setTextAlignment(Qt.AlignCenter)
             healthItem.setFlags(Qt.ItemIsEnabled)
             self.tableWidget.setItem(i, 1, healthItem)
-            pointsItem = QTableWidgetItem("0")
+
+            pointss = 0
+            if i == 0:
+                pointss = self.points.pointsPlayer1
+            elif i == 1:
+                pointss = self.points.pointsPlayer2
+            elif i == 2:
+                pointss = self.points.pointsPlayer3
+            else:
+                pointss = self.points.pointsPlayer4
+
+            pointsItem = QTableWidgetItem(str(pointss))
             pointsItem.setTextAlignment(Qt.AlignCenter)
             pointsItem.setFlags(Qt.ItemIsEnabled)
             self.tableWidget.setItem(i, 2, pointsItem)
             self.tableWidget.setFocusPolicy(Qt.NoFocus)
-
-        # set point counters on zero
-        self.points.pointsPlayer1 = 0
-        self.points.pointsPlayer2 = 0
-        self.points.pointsPlayer3 = 0
-        self.points.pointsPlayer4 = 0
 
         # list of all players which play current game
         self.playerNames = player_names
@@ -523,12 +563,13 @@ class MainWindow(QWidget):
                     self.indexListOfPoints.append((i, j))           # for big points
 
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
-                QApplication.processEvents()
+                # QApplication.processEvents()
 
         self.playerList = []  # list of players
         self.playerRotationList = []  # list of players rotation
         self.enemiesList = []  # list od enemies
         self.playerStartList = []
+        self.deadPlayerList = []
 
         enemyCounter = 1
 
@@ -574,8 +615,11 @@ class MainWindow(QWidget):
                         self.playerRotationList.append(0)
 
                     self.map.map_matrix[i][j] = len(self.playerList) + 2  # Setting players on the map
-                    mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
-                    QApplication.processEvents()
+                    if player_counter - 1 < len(self.playerNames) and "_DEAD" in self.playerNames[player_counter - 1]:
+                        pass
+                    else:
+                        mapGrid.addWidget(graphView, i, j, Qt.AlignCenter)
+                    # QApplication.processEvents()
 
                 elif self.map.map_matrix[i][j] == -2 and enemyCounter <= int(
                         number_of_enemies):  # start position of enemy
@@ -590,7 +634,7 @@ class MainWindow(QWidget):
                     self.map.map_matrix[i][j] = 7  # Setting enemies on the map
                     self.enemiesList.append(label)  # put enemy in list of enemies
                     mapGrid.addWidget(label, i, j, Qt.AlignCenter)
-                    QApplication.processEvents()
+                    # QApplication.processEvents()
 
         self.playerStartList.append([self.playerList[0].width() * 8, self.playerList[0].height() * 6.5])
         self.playerStartList.append([self.playerList[0].width() * 26, self.playerList[0].height() * 6.5])
@@ -654,7 +698,7 @@ class MainWindow(QWidget):
                 self.collect_points(self.playerList[i], i)
                 self.check_teleport(self.playerList[i])
                 # self.check_death(self.playerList[i], i)
-                QApplication.processEvents()
+                # QApplication.processEvents()
 
     def closeEvent(self, event):
         if self.key_notifier is not None:
@@ -673,15 +717,13 @@ class MainWindow(QWidget):
         rect = player_label.geometry()
         if rect.x() < self.map_wall_labels[0].x() - player_label.width() / 2:
             if self.enemies_dead == len(self.enemiesList):
-                # TODO: Sledeci nivo
-                pass
-            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7), rect.y(), rect.width(),
+                self.maze(self.layout(), len(self.playerList), len(self.enemiesList), self.playerNames, True)
+            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7) - player_label.width(), rect.y(), rect.width(),
                                      rect.height())
-        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width() / 2:
+        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) - player_label.width():
             if self.enemies_dead == len(self.enemiesList):
-                # TODO: Sledeci nivo
-                pass
-            player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(),
+                self.maze(self.layout(), len(self.playerList), len(self.enemiesList), self.playerNames, True)
+            player_label.setGeometry(self.map_wall_labels[0].x(), rect.y(), rect.width(),
                                      rect.height())
 
     def check_teleport_enemy(self, player_label):
@@ -705,7 +747,10 @@ class MainWindow(QWidget):
                     if self.playerHealth[index] == 0:
                         player_label.setGeometry(self.playerList[index].x() * -1, self.playerList[index].y() * -1,
                                                  rectPlayer.width(), rectPlayer.height())
-                        self.check_end()
+                        self.playerNames[index] = self.playerNames[index] + "_DEAD"
+                        self.players_dead += 1
+                        self.check_end(self.layout())
+                        return
                     rowCount = self.tableWidget.rowCount()
                     for row in range(rowCount):
                         healthItem = QTableWidgetItem(str(self.playerHealth[index]))
@@ -737,10 +782,51 @@ class MainWindow(QWidget):
                             pointsItem.setFlags(Qt.ItemIsEnabled)
                             self.tableWidget.setItem(row, 2, pointsItem)
 
-    def check_end(self):
+    def check_end(self, layout):
         if self.players_dead == len(self.playerList):
-            # TODO: Evaluate best player
-            # TODO: End
+
+            self.__init_var_(True)
+
+            bestPoints = 0
+            bestPlayer = ""
+
+            if self.points.pointsPlayer1 >= bestPoints:
+                bestPoints = self.points.pointsPlayer1
+                bestPlayer = self.playerNames[0]
+
+            if self.points.pointsPlayer2 >= bestPoints and len(self.playerNames) > 1:
+                bestPoints = self.points.pointsPlayer2
+                bestPlayer = self.playerNames[1]
+
+            if self.points.pointsPlayer3 >= bestPoints and len(self.playerNames) > 2:
+                bestPoints = self.points.pointsPlayer3
+                bestPlayer = self.playerNames[2]
+
+            if self.points.pointsPlayer4 >= bestPoints and len(self.playerNames) > 3:
+                bestPoints = self.points.pointsPlayer4
+                bestPlayer = self.playerNames[3]
+
+            cleanGrid(layout)
+
+            self.setGeometry(750, 250, 700, 700)
+            self.showMaximized()
+
+            labelStyle = 'QLabel {background-color: transparent; color: red; font: 36pt, Consoles; height:48px; width: 120px}'
+
+            labelWinner = QLabel()
+            labelWinner.setAlignment(Qt.AlignCenter)
+            labelWinner.setText("Player " + bestPlayer[:-5] + " won with " + str(bestPoints) + " points!")
+            labelWinner.setStyleSheet(labelStyle)
+            layout.addWidget(labelWinner, 0, 0)
+
+            buttonBack = QPushButton("BACK", self)
+            buttonBack.setStyleSheet(
+                'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
+            layout.addWidget(buttonBack, 1, 0)
+            buttonBack.clicked.connect(lambda: self.initWindow(layout))
+
+            self.setLayout(layout)
+
             pass
 
     def switchBool(self):

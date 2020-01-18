@@ -39,17 +39,15 @@ class EnemyThread(QObject):
 
     def changeEnemySpeed(self, numberLevel):        # high level -> high speed
         if numberLevel <= 1:
-            self.enemySpeed = 0.075
+            self.enemySpeed = 0.005
         elif numberLevel == 2:
-            self.enemySpeed = 0.065
+            self.enemySpeed = 0.004
         elif numberLevel == 3:
-            self.enemySpeed = 0.06
+            self.enemySpeed = 0.003
         elif numberLevel == 4:
-            self.enemySpeed = 0.055
-        elif numberLevel == 5:
-            self.enemySpeed = 0.05
-        else:
-            self.enemySpeed = 0.04
+            self.enemySpeed = 0.002
+        elif numberLevel >= 5:
+            self.enemySpeed = 0.001
 
     def slow_down(self, is_slowed):
         if is_slowed:
@@ -61,4 +59,4 @@ class EnemyThread(QObject):
     def __enemyRun__(self):
         while not self.isEnemyDie:
             self.enemy_signal.emit(self.index)
-            time.sleep(0.005 * self.slowed_down)
+            time.sleep(self.enemySpeed * self.slowed_down)
