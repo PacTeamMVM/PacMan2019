@@ -13,6 +13,7 @@ class EnemyThread(QObject):
         self.enemySpeed = 0.075                                 # speed of enemies moving
         self.enemy = None                                       # list of enemies
         self.enemy_values = None
+        self.slowed_down = 1
         self.index = -1
         self.isEnemyDie = False
         self.thread = QThread()
@@ -50,8 +51,14 @@ class EnemyThread(QObject):
         else:
             self.enemySpeed = 0.04
 
+    def slow_down(self, is_slowed):
+        if is_slowed:
+            self.slowed_down = 5
+        else:
+            self.slowed_down = 1
+
     @pyqtSlot()
     def __enemyRun__(self):
         while not self.isEnemyDie:
             self.enemy_signal.emit(self.index)
-            time.sleep(0.005)
+            time.sleep(0.005 * self.slowed_down)

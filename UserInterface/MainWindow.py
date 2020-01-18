@@ -140,6 +140,7 @@ class MainWindow(QWidget):
         self.key_notifier = None
         self.enemyThreads = []
         self.enemyThread = None
+        self.enemies_dead = 0
 
         self.movie = None
         self.moviePlayer = None
@@ -157,6 +158,7 @@ class MainWindow(QWidget):
         self.indexListOfPoints = []
 
         self.playerHealth = [3, 3, 3, 3]
+        self.players_dead = 0
         self.canPacManEatGhost = False
         self.winnerLabel = QLabel()         # label for print winner player and points
 
@@ -669,10 +671,16 @@ class MainWindow(QWidget):
 
     def check_teleport(self, player_label):
         rect = player_label.geometry()
-        if rect.x() < self.map_wall_labels[0].x() - player_label.width():
+        if rect.x() < self.map_wall_labels[0].x() - player_label.width() / 2:
+            if self.enemies_dead == len(self.enemiesList):
+                # TODO: Sledeci nivo
+                pass
             player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7), rect.y(), rect.width(),
                                      rect.height())
-        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width():
+        elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) + player_label.width() / 2:
+            if self.enemies_dead == len(self.enemiesList):
+                # TODO: Sledeci nivo
+                pass
             player_label.setGeometry(self.map_wall_labels[0].x() - player_label.width(), rect.y(), rect.width(),
                                      rect.height())
 
@@ -691,12 +699,13 @@ class MainWindow(QWidget):
             rectEnemy = self.enemiesList[i].frameGeometry()
             if rectEnemy.intersects(rectPlayer):
                 if not self.canPacManEatGhost:
-                    player_label.setGeometry(self.playerStartList[index][0], self.playerStartList[index][1],
+                    player_label.setGeometry(int(self.playerStartList[index][0]), int(self.playerStartList[index][1]),
                                              rectPlayer.width(), rectPlayer.height())
                     self.playerHealth[index] -= 1
                     if self.playerHealth[index] == 0:
                         player_label.setGeometry(self.playerList[index].x() * -1, self.playerList[index].y() * -1,
                                                  rectPlayer.width(), rectPlayer.height())
+                        self.check_end()
                     rowCount = self.tableWidget.rowCount()
                     for row in range(rowCount):
                         healthItem = QTableWidgetItem(str(self.playerHealth[index]))
@@ -707,9 +716,38 @@ class MainWindow(QWidget):
                 elif self.canPacManEatGhost:
                     self.enemiesList[i].setGeometry(rectEnemy.x() * -1000, rectEnemy.y() * -1000, rectEnemy.width(),
                                                     rectEnemy.height())
+                    self.enemies_dead += 1
+                    rowCount = self.tableWidget.rowCount()
+                    for row in range(rowCount):
+                        item = self.tableWidget.item(row, 0)
+                        itemText = item.text()
+
+                        if itemText == self.playerNames[index]:
+                            self.points.bigPointsIncrement(index)
+                            if index == 0:
+                                pointsItem = QTableWidgetItem(str(self.points.pointsPlayer1))
+                            elif index == 1:
+                                pointsItem = QTableWidgetItem(str(self.points.pointsPlayer2))
+                            elif index == 2:
+                                pointsItem = QTableWidgetItem(str(self.points.pointsPlayer3))
+                            else:
+                                pointsItem = QTableWidgetItem(str(self.points.pointsPlayer4))
+
+                            pointsItem.setTextAlignment(Qt.AlignCenter)
+                            pointsItem.setFlags(Qt.ItemIsEnabled)
+                            self.tableWidget.setItem(row, 2, pointsItem)
+
+    def check_end(self):
+        if self.players_dead == len(self.playerList):
+            # TODO: Evaluate best player
+            # TODO: End
+            pass
 
     def switchBool(self):
         self.canPacManEatGhost = False
+        # slow down enemies
+        for k in range(len(self.enemyThreads)):
+            self.enemyThreads[k].slow_down(False)
 
     def collect_points(self, player_label, index):
         # lock = Lock()
@@ -727,10 +765,32 @@ class MainWindow(QWidget):
                     if self.map_point_labels[j].big_point:
                         self.map_point_labels[j].collected_big = True
                         self.canPacManEatGhost = True                       # bool - mode Pac-man eat ghost
+                        # slow down enemies
+                        for k in range(len(self.enemyThreads)):
+                            self.enemyThreads[k].slow_down(True)
                         # a timer that will count how many second the Pac-man no longer has the possibility to eat ghost
                         t = Timer(10, self.switchBool)
                         t.start()
                         # do increase points
+                        rowCount = self.tableWidget.rowCount()
+                        for row in range(rowCount):
+                            item = self.tableWidget.item(row, 0)
+                            itemText = item.text()
+
+                            if itemText == self.playerNames[index]:
+                                self.points.normalPointsIncrement(index)
+                                if index == 0:
+                                    pointsItem = QTableWidgetItem(str(self.points.pointsPlayer1))
+                                elif index == 1:
+                                    pointsItem = QTableWidgetItem(str(self.points.pointsPlayer2))
+                                elif index == 2:
+                                    pointsItem = QTableWidgetItem(str(self.points.pointsPlayer3))
+                                else:
+                                    pointsItem = QTableWidgetItem(str(self.points.pointsPlayer4))
+
+                                pointsItem.setTextAlignment(Qt.AlignCenter)
+                                pointsItem.setFlags(Qt.ItemIsEnabled)
+                                self.tableWidget.setItem(row, 2, pointsItem)
                 else:
                     self.map_point_labels[j].collected = True
                     rowCount = self.tableWidget.rowCount()
@@ -815,10 +875,10 @@ class MainWindow(QWidget):
                 self.enemiesList[i].setGeometry(rectEnemy.x() + 1, rectEnemy.y(), rectEnemy.width(),
                                                 rectEnemy.height())
             if direction == 3 and not self.check_collision(self.enemiesList[i], 0, -1):
-                self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) - 1, rectEnemy.width(),
+                self.enemiesList[i].setGeometry(rectEnemy.x(), int(rectEnemy.y()) - 1, rectEnemy.width(),
                                                 rectEnemy.height())
             if direction == 4 and not self.check_collision(self.enemiesList[i], 0, self.enemiesList[i].height() + 1):
-                self.enemiesList[i].setGeometry(rectEnemy.x(), float(rectEnemy.y()) + 1, rectEnemy.width(),
+                self.enemiesList[i].setGeometry(rectEnemy.x(), int(rectEnemy.y()) + 1, rectEnemy.width(),
                                                 rectEnemy.height())
             enemy_values.direction_counter -= 1
             self.check_teleport_enemy(self.enemiesList[i])

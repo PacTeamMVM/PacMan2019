@@ -15,4 +15,12 @@ class Points:
         else:
             self.pointsPlayer4 += 10
 
-    #ovde kasnije dodati metode za povecanje poena kada se pokupi bonus i kada se ubije neprijatelj
+    def bigPointsIncrement(self, index):
+        if index == 0:
+            self.pointsPlayer1 += 200
+        elif index == 1:
+            self.pointsPlayer2 += 200
+        elif index == 2:
+            self.pointsPlayer3 += 200
+        else:
+            self.pointsPlayer4 += 200
