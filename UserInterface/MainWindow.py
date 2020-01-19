@@ -539,6 +539,14 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 1, 0)
+
+        labelStyle = 'QLabel {background-color: transparent; color: yellow; font: 15pt, Consoles; height:20px; width: 50px}'
+        self.labelEatEnemy = QLabel()
+        self.labelEatEnemy.setAlignment(Qt.AlignCenter)
+        self.labelEatEnemy.setText("Ne mozes jedes duhove!")
+        self.labelEatEnemy.setStyleSheet(labelStyle)
+        layout.addWidget(self.labelEatEnemy, 1, 1)
+
         buttonBack.clicked.connect(lambda: self.backWindow(layout))
 
         self.map = Map()
@@ -717,7 +725,7 @@ class MainWindow(QWidget):
                     if not self.check_collision(self.playerList[i], self.playerList[i].width() + 5, 0):
                         self.playerList[i].setGeometry(rect.x() + 5, rect.y(), rect.width(), rect.height())
 
-                self.collect_points(self.playerList[i], i)
+                self.collect_points(self.playerList[i], i, self.layout())
                 self.check_teleport(self.playerList[i])
                 # self.check_death(self.playerList[i], i)
                 # QApplication.processEvents()
@@ -852,11 +860,12 @@ class MainWindow(QWidget):
 
     def switchBool(self):
         self.canPacManEatGhost = False
+        self.labelEatEnemy.setText("Ne mozes jedes duhove!")
         # slow down enemies
         for k in range(len(self.enemyThreads)):
             self.enemyThreads[k].slow_down(False)
 
-    def collect_points(self, player_label, index):
+    def collect_points(self, player_label, index, layout):
         # lock = Lock()
         rect = player_label.geometry()
         for j in range(len(self.map_point_labels)):
@@ -872,6 +881,7 @@ class MainWindow(QWidget):
                     if self.map_point_labels[j].big_point and not self.map_point_labels[j].collected_big:
                         self.map_point_labels[j].collected_big = True
                         self.canPacManEatGhost = True  # bool - mode Pac-man eat ghost
+                        self.labelEatEnemy.setText("Duhovi spremni za pojesti!")
                         # slow down enemies
                         for k in range(len(self.enemyThreads)):
                             self.enemyThreads[k].slow_down(True)
@@ -1023,6 +1033,7 @@ class MainWindow(QWidget):
             # Start process
             p = Process(target=make_deus_happen, args=(self.deus_ex_value, ))
             p.start()
+            p.join()
 
             self.paint_deus(self.map_point_labels[labelIndex])
 
