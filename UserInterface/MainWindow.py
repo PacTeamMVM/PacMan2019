@@ -4,6 +4,8 @@ import random
 import sys
 import time
 import winsound
+from multiprocessing.context import Process
+from multiprocessing import Value
 from threading import Timer
 
 from PyQt5.QtCore import QByteArray, Qt, QSize, QCoreApplication
@@ -22,7 +24,6 @@ from UserInterface import PointLabel
 isTimeToDirection = True
 drawCounter = 0
 
-
 def cleanGrid(layout):
     while layout.count() > 0:
         item = layout.takeAt(0)
@@ -31,6 +32,15 @@ def cleanGrid(layout):
         w = item.widget()
         if w:
             w.deleteLater()
+
+
+def make_deus_happen(deus_ex_value):
+    deus_ex_value.value = 1
+    deus_time = time.time()
+    while time.time() - 2 <= deus_time:
+        time.sleep(1)
+    deus_ex_value.value = 2
+    QCoreApplication.processEvents()
 
 
 def clickBox(state):
@@ -137,6 +147,9 @@ class MainWindow(QWidget):
         self.key_notifier = None
         self.playerNames = None
         self.level = 0
+        self.deus_timer_seconds = 30
+        self.deus_timer = Timer(self.deus_timer_seconds, self.deus_ex)
+        self.deus_ex_value = Value('i', 0)
         self.__init_var_(False)
 
         self.show()
@@ -401,7 +414,7 @@ class MainWindow(QWidget):
             self.enemyThread.enemy_signal.connect(self.methodMovingEnemy)
             self.enemyThread.enemyStart()
             self.enemyThreads.append(self.enemyThread)
-        #self.setWindowState(Qt.WindowMaximized)
+        # self.setWindowState(Qt.WindowMaximized)
 
     def __init_var_(self, is_next_level=False):
 
@@ -556,11 +569,12 @@ class MainWindow(QWidget):
                     scaledPix = self.pointPix.scaled(int(self.mapFrame.width() / len(self.map.map_matrix[0])) - 5,
                                                      int(self.mapFrame.height() / len(self.map.map_matrix)) - 5)
                     label = PointLabel.PointLabel(scaledPix)
+                    label.setFixedSize(scaledPix.width(), scaledPix.height())
                     self.map_point_labels.append(label)
                     self.map_point_label_row.append(i)
                     self.map_point_label_column.append(j)
 
-                    self.indexListOfPoints.append((i, j))           # for big points
+                    self.indexListOfPoints.append((i, j))  # for big points
 
                 mapGrid.addWidget(label, i, j, Qt.AlignCenter)
                 # QApplication.processEvents()
@@ -641,6 +655,14 @@ class MainWindow(QWidget):
         self.playerStartList.append([self.playerList[0].width() * 8, self.playerList[0].height() * 27.5])
         self.playerStartList.append([self.playerList[0].width() * 26.2, self.playerList[0].height() * 27.5])
 
+        # Start timer for deus ex effect
+        if self.deus_timer.is_alive():
+            self.deus_timer.cancel()
+
+        self.deus_timer = Timer(self.deus_timer_seconds, self.deus_ex)
+        self.deus_timer.start()
+
+        self.showMaximized()
         self.setLayout(layout)
 
     def keyPressEvent(self, event):
@@ -718,7 +740,8 @@ class MainWindow(QWidget):
         if rect.x() < self.map_wall_labels[0].x() - player_label.width() / 2:
             if self.enemies_dead == len(self.enemiesList):
                 self.maze(self.layout(), len(self.playerList), len(self.enemiesList), self.playerNames, True)
-            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7) - player_label.width(), rect.y(), rect.width(),
+            player_label.setGeometry(player_label.width() * (len(self.map.map_matrix[0]) + 7) - player_label.width(),
+                                     rect.y(), rect.width(),
                                      rect.height())
         elif rect.x() > player_label.width() * (len(self.map.map_matrix[0]) + 7) - player_label.width():
             if self.enemies_dead == len(self.enemiesList):
@@ -827,8 +850,6 @@ class MainWindow(QWidget):
 
             self.setLayout(layout)
 
-            pass
-
     def switchBool(self):
         self.canPacManEatGhost = False
         # slow down enemies
@@ -845,12 +866,12 @@ class MainWindow(QWidget):
             point_rect.setWidth(point_rect.width() / 3)
             point_rect.setHeight(point_rect.height() / 3)
             if point_rect.intersects(rect):
-                #self.map_grid.itemAtPosition(self.map_point_label_row[j], self.map_point_label_column[j]).setGeometry(
+                # self.map_grid.itemAtPosition(self.map_point_label_row[j], self.map_point_label_column[j]).setGeometry(
                 #    QRect(0, 0, 0, 0))
                 if self.map_point_labels[j].collected:
-                    if self.map_point_labels[j].big_point:
+                    if self.map_point_labels[j].big_point and not self.map_point_labels[j].collected_big:
                         self.map_point_labels[j].collected_big = True
-                        self.canPacManEatGhost = True                       # bool - mode Pac-man eat ghost
+                        self.canPacManEatGhost = True  # bool - mode Pac-man eat ghost
                         # slow down enemies
                         for k in range(len(self.enemyThreads)):
                             self.enemyThreads[k].slow_down(True)
@@ -877,6 +898,19 @@ class MainWindow(QWidget):
                                 pointsItem.setTextAlignment(Qt.AlignCenter)
                                 pointsItem.setFlags(Qt.ItemIsEnabled)
                                 self.tableWidget.setItem(row, 2, pointsItem)
+                    elif self.map_point_labels[j].deus_ex_heart and not self.map_point_labels[j].collected_deus_ex:
+                        self.map_point_labels[j].collected_deus_ex = True
+                        rowCount = self.tableWidget.rowCount()
+                        for row in range(rowCount):
+                            item = self.tableWidget.item(row, 0)
+                            itemText = item.text()
+
+                            if itemText == self.playerNames[index]:
+                                self.playerHealth[index] += 1
+                                healthItem = QTableWidgetItem(str(self.playerHealth[index]))
+                                healthItem.setTextAlignment(Qt.AlignCenter)
+                                healthItem.setFlags(Qt.ItemIsEnabled)
+                                self.tableWidget.setItem(row, 1, healthItem)
                 else:
                     self.map_point_labels[j].collected = True
                     rowCount = self.tableWidget.rowCount()
@@ -977,6 +1011,36 @@ class MainWindow(QWidget):
 
         self.initWindow(layout)
 
+    def deus_ex(self):
+        chance = random.randint(0, 1)
+        if chance == 0:
+            randomCoordinate = random.randint(0, len(self.indexListOfPoints))
+            labelIndex = -1
+            for i in range(len(self.map_point_labels)):
+                if i == randomCoordinate:
+                    labelIndex = i
+
+            # Start process
+            p = Process(target=make_deus_happen, args=(self.deus_ex_value, ))
+            p.start()
+
+            self.paint_deus(self.map_point_labels[labelIndex])
+
+        self.deus_timer.cancel()
+        self.deus_timer = Timer(self.deus_timer_seconds, self.deus_ex)
+        self.deus_timer.start()
+
+    def paint_deus(self, deus_label):
+        deus_label.deus_ex_heart = True
+        deus_label.deus_ex_appearing = True
+        while self.deus_ex_value.value != 2:
+            deus_label.deus_ex_appearing = not deus_label.deus_ex_appearing
+            deus_label.repaint()
+            time.sleep(0.5)
+        deus_label.deus_ex_appearing = False
+        deus_label.repaint()
+        self.deus_ex_value.value = 0
+
     def mazeTournament(self, layout, number_of_players):
         self.matchIdentifier += 1
         labelStyle = 'QLabel {background-color: transparent; color: red; font: 12pt, Consoles; height:48px; width: 120px}'
@@ -1000,7 +1064,7 @@ class MainWindow(QWidget):
         elif self.matchIdentifier == 2:
             file = open("semi_final2.txt", 'r')
         elif self.matchIdentifier == 3:
-            #load file for final
+            # load file for final
             pass
 
         informationFromFile = file.read()
@@ -1012,7 +1076,7 @@ class MainWindow(QWidget):
         tableStyle = 'QTableWidget {background-color: transparent; color: red; font: 10pt, Consoles; height:48px; ' \
                      'width: 120px; }'
         self.tableWidget = QTableWidget()
-        #self.tableWidget.si
+        # self.tableWidget.si
         self.tableWidget.setRowCount(int(number_of_players))
         self.tableWidget.setColumnCount(3)
         self.tableWidget.setStyleSheet(tableStyle)
@@ -1038,7 +1102,7 @@ class MainWindow(QWidget):
         buttonBack.setStyleSheet(
             'QPushButton {background-color: transparent; color: red; font: 15pt, Consoles; height:48px; width: 120px}')
         layout.addWidget(buttonBack, 1, 0)
-        #buttonBack.clicked.connect(lambda: self.backWindow(layout))
+        # buttonBack.clicked.connect(lambda: self.backWindow(layout))
         buttonBack.clicked.connect(lambda: self.initWindow(layout))
 
         if self.matchIdentifier == 1 or self.matchIdentifier == 2:
@@ -1048,6 +1112,11 @@ class MainWindow(QWidget):
             layout.addWidget(buttonNextMatch, 1, 1)
             buttonNextMatch.clicked.connect(lambda: self.mazeTournament(layout, number_of_players))
 
+    def closeEvent(self, event):
+        # here you can terminate your threads and do other stuff
+        self.deus_timer.cancel()
+        # and afterwards call the closeEvent of the super-class
+        super(MainWindow, self).closeEvent(event)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
